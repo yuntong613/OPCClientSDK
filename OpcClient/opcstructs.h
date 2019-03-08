@@ -1,0 +1,4 @@
+#pragma once
+
+enum OPCOLEInitMode { APARTMENTTHREADED, MULTITHREADED };
+
