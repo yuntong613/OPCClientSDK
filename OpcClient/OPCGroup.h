@@ -27,6 +27,8 @@ Boston, MA  02111-1307, USA.
 
 #include "Transaction.h"
 #include "IAsynchDataCallback.h"
+#include <mutex>
+#include <map>
 /**
 * Forward decl.
 */
@@ -96,12 +98,18 @@ private:
 	*/
 	OPCHANDLE * buildServerHandleList(std::vector<COPCItem *>& items);
 
+	std::mutex m_ItemLock;
+	std::map<std::string, COPCItem*> m_mapItems;
 public:
 	COPCGroup(const std::string & groupName, bool active, unsigned long reqUpdateRate_ms, unsigned long &revisedUpdateRate_ms, float deadBand, COPCServer &server);
 
 	virtual ~COPCGroup();
 
+	void AddItemToMap(COPCItem* pItem);
 
+	void RemoveItemFromMap(const char* name);
+
+	void RemoveAllItems();
 	COPCItem * addItem(std::string &itemName, bool active);
 
 	/**

@@ -23,6 +23,7 @@ Boston, MA  02111-1307, USA.
 #include "OPCItem.h"
 #include "OPCException.h"
 
+
 /**
 * Handles OPC (DCOM) callbacks at the group level. It deals with the receipt of data from asynchronous operations.
 * This is a fake COM object.
@@ -210,7 +211,59 @@ COPCGroup::COPCGroup(const std::string & groupName, bool active, unsigned long r
 
 COPCGroup::~COPCGroup()
 {
+	RemoveAllItems();
 	opcServer.getServerInterface()->RemoveGroup(groupHandle, FALSE);
+}
+
+void COPCGroup::AddItemToMap(COPCItem* pItem)
+{
+	std::lock_guard<std::mutex> itemLock(m_ItemLock);
+
+	std::map<std::string, COPCItem*>::iterator it = m_mapItems.find(pItem->getName());
+	if (it!=m_mapItems.end())
+	{
+		COPCItem* pItemFind = it->second;
+		if (pItemFind)
+		{
+			delete pItemFind;
+			pItemFind = NULL;
+		}
+	}	
+	m_mapItems.insert(std::pair<std::string,COPCItem*>(pItem->getName(), pItem));
+}
+
+void COPCGroup::RemoveItemFromMap(const char* name)
+{
+	std::lock_guard<std::mutex> itemLock(m_ItemLock);
+
+	std::map<std::string, COPCItem*>::iterator it = m_mapItems.find(name);
+	if (it != m_mapItems.end())
+	{
+		COPCItem* pItemFind = it->second;
+		if (pItemFind)
+		{
+			delete pItemFind;
+			pItemFind = NULL;
+			m_mapItems.erase(it);
+		}
+	}
+}
+
+void COPCGroup::RemoveAllItems()
+{
+	std::lock_guard<std::mutex> itemLock(m_ItemLock);
+
+	std::map<std::string, COPCItem*>::iterator it;
+	for(it = m_mapItems.begin();it!=m_mapItems.end();it++)
+	{
+		COPCItem* pItemFind = it->second;
+		if (pItemFind)
+		{
+			delete pItemFind;
+			pItemFind = NULL;
+		}
+	}
+	m_mapItems.clear();
 }
 
 OPCHANDLE * COPCGroup::buildServerHandleList(std::vector<COPCItem *>& items) {

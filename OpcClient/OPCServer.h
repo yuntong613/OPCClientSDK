@@ -29,21 +29,9 @@ class COPCGroup;
 
 #include "opcda.h"
 #include <vector>
-/**
-* Holds status information about the server
-*/
-typedef struct {
-	FILETIME ftStartTime;
-	FILETIME ftCurrentTime;
-	FILETIME ftLastUpdateTime;
-	OPCSERVERSTATE dwServerState;
-	DWORD dwGroupCount;
-	DWORD dwBandWidth;
-	WORD wMajorVersion;
-	WORD wMinorVersion;
-	WORD wBuildNumber;
-	std::string vendorInfo;
-} ServerStatus;
+#include "opcstructs.h"
+#include <mutex>
+#include <map>
 
 /**
 * Local representation of a local or remote OPC server. Wrapper for the COM interfaces to the server.
@@ -83,6 +71,9 @@ private:
 	* Name of the server
 	*/
 	const std::string name;
+
+	std::mutex m_groupLock;
+	std::map<std::string, COPCGroup*> m_mapGroups;
 public:
 
 	/**
@@ -92,6 +83,16 @@ public:
 	COPCServer(ATL::CComPtr<IOPCServer> &opcServerInterface,std::string svrname);
 
 	virtual ~COPCServer();
+
+	void AddGroupToMap(COPCGroup* pGroup);
+	void RemoveGroupFromMap(const char* name);
+	void RemoveAllGroups(COPCGroup* pGroup);
+
+	//添加读取项
+	bool AddItems(const char* group, std::vector<std::string> lstAdded);
+
+	//删除读取项
+	bool RemoveItems(const char* group, std::vector<std::string> lstDel);
 
 	/**
 	* Browse the OPC servers namespace.

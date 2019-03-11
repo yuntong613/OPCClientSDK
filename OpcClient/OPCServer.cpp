@@ -44,6 +44,95 @@ COPCServer::~COPCServer()
 
 
 
+void COPCServer::AddGroupToMap(COPCGroup* pGroup)
+{
+	std::lock_guard<std::mutex> lk(m_groupLock);
+	m_mapGroups.insert(std::pair<std::string, COPCGroup*>(name, pGroup));
+}
+
+void COPCServer::RemoveGroupFromMap(const char* name)
+{
+	std::lock_guard<std::mutex> lk(m_groupLock);
+
+	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(name);
+	if (it != m_mapGroups.end())
+	{
+		COPCGroup* pGroupFind = it->second;
+		if (pGroupFind)
+		{
+			delete pGroupFind;
+			pGroupFind = NULL;
+			m_mapGroups.erase(it);
+		}
+	}
+}
+
+void COPCServer::RemoveAllGroups(COPCGroup* pGroup)
+{
+	std::lock_guard<std::mutex> lk(m_groupLock);
+
+	std::map<std::string, COPCGroup*>::iterator it;
+	for (it = m_mapGroups.begin(); it != m_mapGroups.end(); it++)
+	{
+		COPCGroup* pGroupFind = it->second;
+		if (pGroupFind)
+		{
+			delete pGroupFind;
+			pGroupFind = NULL;
+			m_mapGroups.erase(it);
+		}
+	}
+	m_mapGroups.clear();
+}
+
+bool COPCServer::AddItems(const char* group, std::vector<std::string> lstAdded)
+{
+	std::lock_guard<std::mutex> lk(m_groupLock);
+	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(name);
+	if (it != m_mapGroups.end())
+	{
+		COPCGroup* pGroup = it->second;
+		if (pGroup)
+		{
+			std::vector<COPCItem*> items;
+			std::vector<HRESULT> errors;
+			int nErrorCount = pGroup->addItems(lstAdded, items, errors, true);
+			for (int i = 0; i < items.size(); i++)
+			{
+				COPCItem* pItem = items[i];
+				if (pItem)
+				{
+					pGroup->AddItemToMap(pItem);
+				}
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+bool COPCServer::RemoveItems(const char* group, std::vector<std::string> lstDel)
+{
+	std::lock_guard<std::mutex> lk(m_groupLock);
+	std::vector<std::string> tmp = lstDel;
+
+	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(group);
+	if (it != m_mapGroups.end())
+	{
+		COPCGroup* pGroup = it->second;
+		if (pGroup)
+		{
+			for (int i=0;i<lstDel.size();i++)
+			{
+				std::string itemName = lstDel[i];
+				pGroup->RemoveItemFromMap(itemName.c_str());
+			}		
+			return true;
+		}
+	}
+	return false;
+}
+
 COPCGroup *COPCServer::makeGroup(const std::string & groupName, bool active, unsigned long reqUpdateRate_ms, unsigned long &revisedUpdateRate_ms, float deadBand) {
 	return new COPCGroup(groupName, active, reqUpdateRate_ms, revisedUpdateRate_ms, deadBand, *this);
 }
