@@ -40,6 +40,7 @@ COPCServer::COPCServer(ATL::CComPtr<IOPCServer> &opcServerInterface, std::string
 
 COPCServer::~COPCServer()
 {
+
 }
 
 
@@ -50,16 +51,17 @@ void COPCServer::AddGroupToMap(COPCGroup* pGroup)
 	m_mapGroups.insert(std::pair<std::string, COPCGroup*>(name, pGroup));
 }
 
-void COPCServer::RemoveGroupFromMap(const char* name)
+void COPCServer::RemoveGroupFromMap(const char* groupName)
 {
 	std::lock_guard<std::mutex> lk(m_groupLock);
 
-	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(name);
+	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(groupName);
 	if (it != m_mapGroups.end())
 	{
 		COPCGroup* pGroupFind = it->second;
 		if (pGroupFind)
 		{
+			pGroupFind->disableAsynch();
 			delete pGroupFind;
 			pGroupFind = NULL;
 			m_mapGroups.erase(it);
@@ -77,6 +79,7 @@ void COPCServer::RemoveAllGroups(COPCGroup* pGroup)
 		COPCGroup* pGroupFind = it->second;
 		if (pGroupFind)
 		{
+			pGroupFind->disableAsynch();
 			delete pGroupFind;
 			pGroupFind = NULL;
 			m_mapGroups.erase(it);
@@ -85,7 +88,23 @@ void COPCServer::RemoveAllGroups(COPCGroup* pGroup)
 	m_mapGroups.clear();
 }
 
-bool COPCServer::AddItems(const char* group, std::vector<std::string> lstAdded)
+bool COPCServer::WriteOPCValue(const char* groupName, const char* itemName, VARIANT& vtValue)
+{
+	std::lock_guard<std::mutex> lk(m_groupLock);
+
+	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(groupName);
+	if (it != m_mapGroups.end())
+	{
+		COPCGroup* pGroupFind = it->second;
+		if (pGroupFind)
+		{
+			return pGroupFind->WriteOPCValue(itemName, vtValue);
+		}
+	}
+	return false;
+}
+
+bool COPCServer::AddItems(const char* groupName, std::vector<std::string> lstAdded)
 {
 	std::lock_guard<std::mutex> lk(m_groupLock);
 	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(name);
@@ -111,12 +130,12 @@ bool COPCServer::AddItems(const char* group, std::vector<std::string> lstAdded)
 	return false;
 }
 
-bool COPCServer::RemoveItems(const char* group, std::vector<std::string> lstDel)
+bool COPCServer::RemoveItems(const char* groupName, std::vector<std::string> lstDel)
 {
 	std::lock_guard<std::mutex> lk(m_groupLock);
 	std::vector<std::string> tmp = lstDel;
 
-	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(group);
+	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(groupName);
 	if (it != m_mapGroups.end())
 	{
 		COPCGroup* pGroup = it->second;
@@ -133,6 +152,11 @@ bool COPCServer::RemoveItems(const char* group, std::vector<std::string> lstDel)
 	return false;
 }
 
+void COPCServer::ShutdownRequest(LPCTSTR lpszReason)
+{
+
+}
+
 COPCGroup *COPCServer::makeGroup(const std::string & groupName, bool active, unsigned long reqUpdateRate_ms, unsigned long &revisedUpdateRate_ms, float deadBand) {
 	return new COPCGroup(groupName, active, reqUpdateRate_ms, revisedUpdateRate_ms, deadBand, *this);
 }
@@ -144,7 +168,6 @@ void COPCServer::getItemNames(std::vector<std::string> & opcItemNames) {
 	OPCNAMESPACETYPE nameSpaceType;
 	HRESULT result = iOpcNamespace->QueryOrganization(&nameSpaceType);
 
-	USES_CONVERSION;
 	int v = 0;
 	WCHAR emptyString[] = { 0 };
 	//result = iOpcNamespace->ChangeBrowsePosition(OPC_BROWSE_TO,emptyString);
@@ -162,11 +185,10 @@ void COPCServer::getItemNames(std::vector<std::string> & opcItemNames) {
 		WCHAR * fullName;
 		result = iOpcNamespace->GetItemID(str, &fullName);
 		if (SUCCEEDED(result)) {
-			USES_CONVERSION;
-			COLE2T cStr(fullName);
+			std::string cStr = CUtils::UnicodeToANSI(fullName);
 			//char * cStr = OLE2T(str);
 			//printf("Adding %s\n", cStr);
-			opcItemNames.push_back((char*)cStr);
+			opcItemNames.push_back(cStr);
 			CoTaskMemFree(fullName);
 		}
 		CoTaskMemFree(str);
@@ -191,8 +213,7 @@ void COPCServer::getStatus(ServerStatus &status) {
 	status.wMinorVersion = serverStatus->wMinorVersion;
 	status.wBuildNumber = serverStatus->wBuildNumber;
 	if (serverStatus->szVendorInfo != NULL) {
-		USES_CONVERSION;
-		status.vendorInfo = OLE2T(serverStatus->szVendorInfo);
+		status.vendorInfo = CUtils::UnicodeToANSI(serverStatus->szVendorInfo);
 		CoTaskMemFree(serverStatus->szVendorInfo);
 	}
 	CoTaskMemFree(serverStatus);

@@ -24,6 +24,7 @@ Boston, MA  02111-1307, USA.
 #include "OpcEnum.h"
 #include <iostream>
 #include "OPCException.h"
+#include "IOPCShutdownSink.h"
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -32,6 +33,8 @@ Boston, MA  02111-1307, USA.
 COPCHost::COPCHost()
 {
 	m_pServer = NULL;
+	m_pIShutdownSink = NULL;
+	m_dwCookieShutdownSink = NULL;
 }
 
 COPCHost::~COPCHost()
@@ -40,6 +43,36 @@ COPCHost::~COPCHost()
 	{
 		delete m_pServer;
 		m_pServer = NULL;
+	}
+
+	if (iConnPtContainer)
+	{
+		// Unadvise shutdown notifications:
+		if (m_dwCookieShutdownSink != 0)
+		{
+			HRESULT hr = E_FAIL;
+			IConnectionPoint *pCP = NULL;
+
+			hr = getConnectionPointContainerInterface()->FindConnectionPoint(IID_IOPCShutdown, &pCP);
+
+			if (SUCCEEDED(hr))
+			{
+				hr = pCP->Unadvise(m_dwCookieShutdownSink);
+				pCP->Release();
+			}
+
+			if (FAILED(hr))
+			{
+				ATLTRACE(_T("OTC: CKServer::Disconnect () - failed to unadvise shutdown notifications\r\n"));
+			}
+			m_dwCookieShutdownSink = 0;
+		}
+
+		if (m_pIShutdownSink != NULL)
+		{
+			m_pIShutdownSink->Release();
+			m_pIShutdownSink = NULL;
+		}
 	}
 }
 
@@ -63,23 +96,12 @@ void CRemoteHost::makeRemoteObject(const IID requestedClass, const IID requested
 	athn.pAuthIdentityData = NULL;
 	athn.pwszServerPrincName = NULL;
 
-	USES_CONVERSION;
-	// 	COAUTHIDENTITY authidentity;
-	// 	authidentity.User = (USHORT*)T2OLE("administrator");
-	// 	authidentity.UserLength = wcslen(T2OLE("administrator"));
-	// 	authidentity.Domain = NULL;
-	// 	authidentity.DomainLength = 0;
-	// 	authidentity.Password = (USHORT*)T2OLE("meandyou321");
-	// 	authidentity.PasswordLength = wcslen(T2OLE("meandyou321"));
-	// 	authidentity.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
-	// 	athn.pAuthIdentityData = &authidentity;
-
 	COSERVERINFO remoteServerInfo;
 	ZeroMemory(&remoteServerInfo, sizeof(COSERVERINFO));
 	remoteServerInfo.pAuthInfo = &athn;
 
-	remoteServerInfo.pwszName = T2OLE(host.c_str());
-	printf("%s\n", OLE2T(remoteServerInfo.pwszName));
+	remoteServerInfo.pwszName = (wchar_t*)CUtils::ANSIToUnicode(host.c_str()).c_str();
+	printf("%s\n", host.c_str());
 
 	MULTI_QI reqInterface;
 	reqInterface.pIID = &requestedInterface;
@@ -92,7 +114,7 @@ void CRemoteHost::makeRemoteObject(const IID requestedClass, const IID requested
 	if (FAILED(result))
 	{
 		printf("Error %x\n", result);
-		throw OPCException("Failed to get remote interface", result);
+		throw OPCException("CoCreateInstanceEx Failed to get remote interface", result);
 	}
 
 	*interfacePtr = reqInterface.pItf; // avoid ref counter getting incremented again
@@ -111,7 +133,7 @@ CLSID CRemoteHost::GetCLSIDFromRemoteRegistry(const std::string& hostName, const
 	HRESULT result = iCatInfo->EnumClassesOfCategories(1, &Implist, 0, NULL, &iEnum);
 	if (FAILED(result))
 	{
-		throw OPCException("Failed to get enum for categeories", result);
+		throw OPCException("EnumClassesOfCategories Failed to get enum for categeories", result);
 	}
 
 	GUID glist, classId;
@@ -128,10 +150,9 @@ CLSID CRemoteHost::GetCLSIDFromRemoteRegistry(const std::string& hostName, const
 		}
 		else
 		{
-			USES_CONVERSION;
-			COLE2T str(wprogID);
+			std::string str = CUtils::UnicodeToANSI(wprogID);
 
-			if (CString(str) == CString(progID.c_str()))
+			if (str.compare(progID) == 0)
 			{
 				classId = glist;
 				CoTaskMemFree(wprogID);
@@ -139,7 +160,7 @@ CLSID CRemoteHost::GetCLSIDFromRemoteRegistry(const std::string& hostName, const
 				break;
 			}
 
-			printf("ProgID: %s", (char*)str);
+			printf("ProgID: %s", str.c_str());
 
 			printf("CLSID: {%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}\n",
 				glist.Data1, glist.Data2, glist.Data3,
@@ -183,12 +204,36 @@ COPCServer* CRemoteHost::connectDAServer(const std::string& serverProgIDOrClsID)
 	{
 		throw OPCException("Failed obtain IID_IOPCServer interface from server", result);
 	}
+
 	if (m_pServer)
 	{
 		delete m_pServer;
 		m_pServer = NULL;
 	}
 	m_pServer = new COPCServer(iOpcServer, serverProgIDOrClsID);
+
+	makeRemoteObject(clsid, IID_IConnectionPointContainer, (void **)&iConnPtContainer);
+
+	IConnectionPoint* cp = NULL;
+	result = iConnPtContainer->FindConnectionPoint(IID_IOPCShutdown, &cp);
+	if (SUCCEEDED(result))
+	{
+		try
+		{
+			// Instantiate the shutdown sink and add us to its reference count:
+			m_pIShutdownSink = new IOPCShutdownSink(m_pServer);
+			m_pIShutdownSink->AddRef();
+
+			result = cp->Advise(m_pIShutdownSink, &m_dwCookieShutdownSink);
+
+			// We are done with the connection point, so release our reference:
+			cp->Release();
+		}
+		catch (...)
+		{
+			throw OPCException("Failed obtain IID_IOPCShutdown interface from server", result);
+		}
+	}
 	return m_pServer;
 }
 
@@ -213,8 +258,8 @@ void CRemoteHost::getListOfDAServers(CATID cid, std::vector<std::string>& listOf
 	ULONG actual;
 	while ((result = iEnum->Next(1, &glist, &actual)) == S_OK)
 	{
-		WCHAR* progID;
-		WCHAR* userType;
+		WCHAR* progID = NULL;
+		WCHAR* userType = NULL;
 		HRESULT res = iCatInfo->GetClassDetails(glist, &progID, &userType);/*ProgIDFromCLSID(glist, &progID)*/
 
 		if (FAILED(res))
@@ -223,17 +268,16 @@ void CRemoteHost::getListOfDAServers(CATID cid, std::vector<std::string>& listOf
 		}
 		else
 		{
-			USES_CONVERSION;
-			COLE2T str(progID);
+			std::string str = CUtils::UnicodeToANSI(progID);
 
-			printf("ProgID: %s ", (LPSTR)str);
+			printf("ProgID: %s ", str.c_str());
 
 			printf("CLSID: {%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}\n",
 				glist.Data1, glist.Data2, glist.Data3,
 				glist.Data4[0], glist.Data4[1], glist.Data4[2], glist.Data4[3],
 				glist.Data4[4], glist.Data4[5], glist.Data4[6], glist.Data4[7]);
 
-			listOfProgIDs.push_back((char*)str);
+			listOfProgIDs.push_back(str);
 			CoTaskMemFree(progID);
 			CoTaskMemFree(userType);
 		}
@@ -270,8 +314,8 @@ CLocalHost::CLocalHost()
 
 COPCServer* CLocalHost::connectDAServer(const std::string& serverProgID)
 {
-	USES_CONVERSION;
-	WCHAR* wideName = T2OLE(serverProgID.c_str());
+
+	WCHAR* wideName = (WCHAR*)CUtils::ANSIToUnicode(serverProgID).c_str();
 
 	CLSID clsid;
 	HRESULT result = CLSIDFromProgID(wideName, &clsid);
@@ -279,7 +323,6 @@ COPCServer* CLocalHost::connectDAServer(const std::string& serverProgID)
 	{
 		throw OPCException("Failed to convert progID to class ID", result);
 	}
-
 
 	ATL::CComPtr<IClassFactory> iClassFactory;
 	result = CoGetClassObject(clsid, CLSCTX_LOCAL_SERVER, NULL, IID_IClassFactory, (void**)&iClassFactory);
@@ -307,6 +350,29 @@ COPCServer* CLocalHost::connectDAServer(const std::string& serverProgID)
 		m_pServer = NULL;
 	}
 	m_pServer = new COPCServer(iOpcServer, serverProgID);
+
+	result = iClassFactory->CreateInstance(NULL, IID_IConnectionPointContainer, (void**)&iConnPtContainer);
+
+	IConnectionPoint* cp = NULL;
+	result = iConnPtContainer->FindConnectionPoint(IID_IOPCShutdown, &cp);
+	if (SUCCEEDED(result))
+	{
+		try
+		{
+			// Instantiate the shutdown sink and add us to its reference count:
+			m_pIShutdownSink = new IOPCShutdownSink(m_pServer);
+			m_pIShutdownSink->AddRef();
+
+			result = cp->Advise(m_pIShutdownSink, &m_dwCookieShutdownSink);
+
+			// We are done with the connection point, so release our reference:
+			cp->Release();
+		}
+		catch (...)
+		{
+			throw OPCException("Failed obtain IID_IOPCShutdown interface from server", result);
+		}
+	}
 	return m_pServer;
 }
 
@@ -343,9 +409,8 @@ void CLocalHost::getListOfDAServers(CATID cid, std::vector<std::string>& listOfP
 		}
 		else
 		{
-			USES_CONVERSION;
-			COLE2T str(progID);
-			listOfProgIDs.push_back((char*)str);
+			std::string str = CUtils::UnicodeToANSI(progID);
+			listOfProgIDs.push_back(str);
 			CoTaskMemFree(progID);
 		}
 	}

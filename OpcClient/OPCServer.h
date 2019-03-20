@@ -85,15 +85,19 @@ public:
 	virtual ~COPCServer();
 
 	void AddGroupToMap(COPCGroup* pGroup);
-	void RemoveGroupFromMap(const char* name);
+
+	void RemoveGroupFromMap(const char* groupName);
+
 	void RemoveAllGroups(COPCGroup* pGroup);
 
+	bool WriteOPCValue(const char* groupName, const char* itemName, VARIANT& vtValue);
 	//添加读取项
-	bool AddItems(const char* group, std::vector<std::string> lstAdded);
+	bool AddItems(const char* groupName, std::vector<std::string> lstAdded);
 
 	//删除读取项
-	bool RemoveItems(const char* group, std::vector<std::string> lstDel);
-
+	bool RemoveItems(const char* groupName, std::vector<std::string> lstDel);
+	//断开连接
+	void ShutdownRequest(LPCTSTR lpszReason);
 	/**
 	* Browse the OPC servers namespace.
 	* This is currently done FLAT mode

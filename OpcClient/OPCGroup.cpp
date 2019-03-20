@@ -182,11 +182,9 @@ COPCGroup::COPCGroup(const std::string & groupName, bool active, unsigned long r
 	name(groupName),
 	opcServer(server)
 {
-	USES_CONVERSION;
-	WCHAR* wideName = T2OLE(groupName.c_str());
+	std::wstring  wideName = CUtils::ANSIToUnicode(groupName);
 
-
-	HRESULT result = opcServer.getServerInterface()->AddGroup(wideName, active, reqUpdateRate_ms, 0, 0, &deadBand,
+	HRESULT result = opcServer.getServerInterface()->AddGroup(wideName.c_str(), active, reqUpdateRate_ms, 0, 0, &deadBand,
 		0, &groupHandle, &revisedUpdateRate_ms, IID_IOPCGroupStateMgt, (LPUNKNOWN*)&iStateManagement);
 	if (FAILED(result))
 	{
@@ -232,11 +230,11 @@ void COPCGroup::AddItemToMap(COPCItem* pItem)
 	m_mapItems.insert(std::pair<std::string,COPCItem*>(pItem->getName(), pItem));
 }
 
-void COPCGroup::RemoveItemFromMap(const char* name)
+void COPCGroup::RemoveItemFromMap(const char* itemName)
 {
 	std::lock_guard<std::mutex> itemLock(m_ItemLock);
 
-	std::map<std::string, COPCItem*>::iterator it = m_mapItems.find(name);
+	std::map<std::string, COPCItem*>::iterator it = m_mapItems.find(itemName);
 	if (it != m_mapItems.end())
 	{
 		COPCItem* pItemFind = it->second;
@@ -362,6 +360,27 @@ COPCItem * COPCGroup::addItem(std::string &itemName, bool active)
 	return itemsCreated[0];
 }
 
+bool COPCGroup::WriteOPCValue(const char* itemName, VARIANT& vtValue)
+{
+	std::lock_guard<std::mutex> itemLock(m_ItemLock);
+
+	std::map<std::string, COPCItem*>::iterator it = m_mapItems.find(itemName);
+	if (it != m_mapItems.end())
+	{
+		COPCItem* pItemFind = it->second;
+		if (pItemFind)
+		{
+			CTransaction* pTrans = pItemFind->writeAsynch(vtValue);
+			if (pTrans)
+			{
+				delete pTrans;
+				pTrans = NULL;
+			}
+		}
+	}
+	return false;
+}
+
 int COPCGroup::addItems(std::vector<std::string>& itemName, std::vector<COPCItem *>& itemsCreated, std::vector<HRESULT>& errors, bool active) {
 	itemsCreated.resize(itemName.size());
 	errors.resize(itemName.size());
@@ -465,5 +484,9 @@ void COPCGroup::disableAsynch() {
 	iAsynchDataCallbackConnectionPoint->Unadvise(callbackHandle);
 	iAsynchDataCallbackConnectionPoint = NULL;
 	asynchDataCallBackHandler = NULL;// WE DO NOT DELETE callbackHandler, let the COM ref counting take care of that
-	userAsynchCBHandler = NULL;
+	if (userAsynchCBHandler)
+	{
+		delete userAsynchCBHandler;
+		userAsynchCBHandler = NULL;
+	}
 }

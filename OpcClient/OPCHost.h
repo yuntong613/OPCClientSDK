@@ -26,6 +26,8 @@ Boston, MA  02111-1307, USA.
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "IOPCShutdownSink.h"
+
 class COPCServer;
 /**
 * Abstract class that represents a PC which may host one or more OPC servers. Provides means of getting a list
@@ -51,8 +53,14 @@ public:
 	*/
 	virtual COPCServer* connectDAServer(const std::string & serverProgID) = 0;
 
+	ATL::CComPtr<IConnectionPointContainer> &getConnectionPointContainerInterface() {
+		return iConnPtContainer;
+	}
 protected:
+	ATL::CComPtr<IConnectionPointContainer> iConnPtContainer;
 	COPCServer* m_pServer;
+	IOPCShutdownSink* m_pIShutdownSink;
+	DWORD m_dwCookieShutdownSink;
 };
 
 /**

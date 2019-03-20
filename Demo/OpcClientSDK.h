@@ -33,8 +33,7 @@ public:
 	//值回调
 	virtual void SetValueReport(OPCValueEventCallBack pFun, void* pUser) = 0;
 	//获取错误信息
-	virtual void GetLastOPCError(std::string& szText,long& code) = 0;
-
+	virtual void GetLastOPCError(std::string& szText, long& code) = 0;
 public:
 	static OpcClientSDK* CreateOPCSDK();
 	static void DestroyOPCSDK(OpcClientSDK* pSdk);

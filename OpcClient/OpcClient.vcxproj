@@ -147,8 +147,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="IOPCShutdownSink.h" />
     <ClInclude Include="IAsynchDataCallback.h" />
+    <ClInclude Include="MyDataCallBack.h" />
     <ClInclude Include="OpcClientSDK.h" />
+    <ClInclude Include="OpcClientSDKImp.h" />
     <ClInclude Include="opccomn.h" />
     <ClInclude Include="opcda.h" />
     <ClInclude Include="OpcEnum.h" />
@@ -163,11 +166,15 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Transaction.h" />
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="IOPCShutdownSink.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="MyDataCallBack.cpp" />
     <ClCompile Include="OpcClient.cpp" />
     <ClCompile Include="OpcClientSDK.cpp" />
+    <ClCompile Include="OpcClientSDKImp.cpp" />
     <ClCompile Include="opccomn_i.cpp" />
     <ClCompile Include="opcda_i.cpp" />
     <ClCompile Include="OpcEnum_i.cpp" />
@@ -185,6 +192,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Transaction.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

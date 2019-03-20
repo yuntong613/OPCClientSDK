@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "OpcClientSDK.h"
 
 // CDemoDlg 对话框
 class CDemoDlg : public CDialogEx
@@ -24,6 +25,7 @@ public:
 // 实现
 protected:
 	HICON m_hIcon;
+	OpcClientSDK* m_pSdk;
 
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
@@ -31,4 +33,11 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+public:
+	CString m_strRemote;
+	CString m_strGroupName;
+	afx_msg void OnBnClickedButtonGetlist();
+	afx_msg void OnDestroy();
+	CListBox m_lstProgIDs;
+	CListBox m_strInfos;
 };

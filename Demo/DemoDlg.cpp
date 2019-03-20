@@ -51,6 +51,8 @@ END_MESSAGE_MAP()
 
 CDemoDlg::CDemoDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_DEMO_DIALOG, pParent)
+	, m_strRemote(_T(""))
+	, m_strGroupName(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -58,12 +60,18 @@ CDemoDlg::CDemoDlg(CWnd* pParent /*=nullptr*/)
 void CDemoDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Text(pDX, IDC_EDIT_ADDR, m_strRemote);
+	DDX_Text(pDX, IDC_EDIT_GROUP, m_strGroupName);
+	DDX_Control(pDX, IDC_LIST_PROGID, m_lstProgIDs);
+	DDX_Control(pDX, IDC_LIST2, m_strInfos);
 }
 
 BEGIN_MESSAGE_MAP(CDemoDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_BN_CLICKED(IDC_BUTTON_GETLIST, &CDemoDlg::OnBnClickedButtonGetlist)
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 
@@ -99,7 +107,9 @@ BOOL CDemoDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
-
+	m_pSdk = OpcClientSDK::CreateOPCSDK();
+	if (m_pSdk)
+		m_pSdk->Initialize();
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -152,3 +162,43 @@ HCURSOR CDemoDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+
+void CDemoDlg::OnBnClickedButtonGetlist()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData();
+	m_lstProgIDs.ResetContent();
+	if (m_pSdk)
+	{
+		std::vector<std::string> lst;
+		if (m_pSdk->GetCLSIDList((LPCTSTR)m_strRemote, lst))
+		{
+			for (int i = 0; i < lst.size(); i++)
+			{
+				m_lstProgIDs.AddString(lst[i].c_str());
+			}
+		}
+		else {
+			std::string error;
+			HRESULT result;
+			m_pSdk->GetLastOPCError(error, result);
+			CString strText;
+			int nIdex = m_strInfos.AddString(error.c_str());
+			m_strInfos.SetCaretIndex(nIdex);
+		}
+
+	}
+}
+
+
+void CDemoDlg::OnDestroy()
+{
+	CDialogEx::OnDestroy();
+	
+	if (m_pSdk)
+	{
+		m_pSdk->Uninitialize();
+		OpcClientSDK::DestroyOPCSDK(m_pSdk);
+	}
+}

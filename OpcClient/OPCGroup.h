@@ -33,6 +33,7 @@ Boston, MA  02111-1307, USA.
 * Forward decl.
 */
 class COPCItem;
+class COPCServer;
 
 /**
 * used internally to implement the asynch callback
@@ -107,11 +108,13 @@ public:
 
 	void AddItemToMap(COPCItem* pItem);
 
-	void RemoveItemFromMap(const char* name);
+	void RemoveItemFromMap(const char* itemName);
 
 	void RemoveAllItems();
+
 	COPCItem * addItem(std::string &itemName, bool active);
 
+	bool WriteOPCValue(const char* itemName, VARIANT& vtValue);
 	/**
 	* returns the number of failed item creates
 	* itemsCreated[x] will be null if could not create and will contain error code in corresponding error entry
