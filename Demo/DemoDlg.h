@@ -38,6 +38,16 @@ public:
 	CString m_strGroupName;
 	afx_msg void OnBnClickedButtonGetlist();
 	afx_msg void OnDestroy();
+	void AddLog(const char* szText);
 	CListBox m_lstProgIDs;
 	CListBox m_strInfos;
+	afx_msg void OnBnClickedButtonConnect();
+	afx_msg void OnBnClickedButtonDisconnect();
+	afx_msg void OnBnClickedButtonAddGroup();
+	afx_msg void OnBnClickedButtonRemoveGroup();
+	afx_msg void OnBnClickedButtonBrowse();
+	void UpdateValue(CString strItemId, CString strValue);
+	afx_msg void OnBnClickedButtonAddItems();
+	CListBox m_lstItems;
+	CListCtrl m_lstValues;
 };

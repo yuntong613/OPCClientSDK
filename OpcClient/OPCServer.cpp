@@ -40,7 +40,7 @@ COPCServer::COPCServer(ATL::CComPtr<IOPCServer> &opcServerInterface, std::string
 
 COPCServer::~COPCServer()
 {
-
+	RemoveAllGroups();
 }
 
 
@@ -48,7 +48,7 @@ COPCServer::~COPCServer()
 void COPCServer::AddGroupToMap(COPCGroup* pGroup)
 {
 	std::lock_guard<std::mutex> lk(m_groupLock);
-	m_mapGroups.insert(std::pair<std::string, COPCGroup*>(name, pGroup));
+	m_mapGroups.insert(std::pair<std::string, COPCGroup*>(pGroup->getName(), pGroup));
 }
 
 void COPCServer::RemoveGroupFromMap(const char* groupName)
@@ -69,13 +69,14 @@ void COPCServer::RemoveGroupFromMap(const char* groupName)
 	}
 }
 
-void COPCServer::RemoveAllGroups(COPCGroup* pGroup)
+void COPCServer::RemoveAllGroups()
 {
 	std::lock_guard<std::mutex> lk(m_groupLock);
 
 	std::map<std::string, COPCGroup*>::iterator it;
-	for (it = m_mapGroups.begin(); it != m_mapGroups.end(); it++)
+	while (!m_mapGroups.empty())
 	{
+		it = m_mapGroups.begin();
 		COPCGroup* pGroupFind = it->second;
 		if (pGroupFind)
 		{
@@ -85,7 +86,6 @@ void COPCServer::RemoveAllGroups(COPCGroup* pGroup)
 			m_mapGroups.erase(it);
 		}
 	}
-	m_mapGroups.clear();
 }
 
 bool COPCServer::WriteOPCValue(const char* groupName, const char* itemName, VARIANT& vtValue)
@@ -107,7 +107,7 @@ bool COPCServer::WriteOPCValue(const char* groupName, const char* itemName, VARI
 bool COPCServer::AddItems(const char* groupName, std::vector<std::string> lstAdded)
 {
 	std::lock_guard<std::mutex> lk(m_groupLock);
-	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(name);
+	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(groupName);
 	if (it != m_mapGroups.end())
 	{
 		COPCGroup* pGroup = it->second;
@@ -154,7 +154,7 @@ bool COPCServer::RemoveItems(const char* groupName, std::vector<std::string> lst
 
 void COPCServer::ShutdownRequest(LPCTSTR lpszReason)
 {
-
+	
 }
 
 COPCGroup *COPCServer::makeGroup(const std::string & groupName, bool active, unsigned long reqUpdateRate_ms, unsigned long &revisedUpdateRate_ms, float deadBand) {

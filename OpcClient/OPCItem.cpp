@@ -113,7 +113,9 @@ void COPCItem::getSupportedProperties(std::vector<CPropertyDescription> &desc) {
 	LPWSTR *pDescriptions;
 	VARTYPE *pvtDataTypes;
 
-	HRESULT res = group.getServer().getPropertiesInterface()->QueryAvailableProperties((WCHAR*)CUtils::ANSIToUnicode(name).c_str(), &noProperties, &pPropertyIDs, &pDescriptions, &pvtDataTypes);
+	wstring szItemID = CUtils::ANSIToUnicode(name);
+
+	HRESULT res = group.getServer().getPropertiesInterface()->QueryAvailableProperties((WCHAR*)szItemID.c_str(), &noProperties, &pPropertyIDs, &pDescriptions, &pvtDataTypes);
 	if (FAILED(res)) {
 		throw OPCException("Failed to restrieve properties", res);
 	}
@@ -141,7 +143,8 @@ void COPCItem::getProperties(const std::vector<CPropertyDescription> &propsToRea
 	propsRead.RemoveAll();
 	propsRead.SetCount(noProperties);
 
-	HRESULT res = group.getServer().getPropertiesInterface()->GetItemProperties((WCHAR*)CUtils::ANSIToUnicode(name).c_str(), noProperties, pPropertyIDs, &pValues, &pErrors);
+	wstring szItemID = CUtils::ANSIToUnicode(name);
+	HRESULT res = group.getServer().getPropertiesInterface()->GetItemProperties((WCHAR*)szItemID.c_str(), noProperties, pPropertyIDs, &pValues, &pErrors);
 	delete[]pPropertyIDs;
 	if (FAILED(res)) {
 		throw OPCException("Failed to restrieve property values", res);

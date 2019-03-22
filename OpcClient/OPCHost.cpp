@@ -100,7 +100,8 @@ void CRemoteHost::makeRemoteObject(const IID requestedClass, const IID requested
 	ZeroMemory(&remoteServerInfo, sizeof(COSERVERINFO));
 	remoteServerInfo.pAuthInfo = &athn;
 
-	remoteServerInfo.pwszName = (wchar_t*)CUtils::ANSIToUnicode(host.c_str()).c_str();
+	wstring hostName = CUtils::ANSIToUnicode(host);
+	remoteServerInfo.pwszName = (wchar_t*)hostName.c_str();
 	printf("%s\n", host.c_str());
 
 	MULTI_QI reqInterface;
@@ -315,10 +316,10 @@ CLocalHost::CLocalHost()
 COPCServer* CLocalHost::connectDAServer(const std::string& serverProgID)
 {
 
-	WCHAR* wideName = (WCHAR*)CUtils::ANSIToUnicode(serverProgID).c_str();
+	wstring  wideName = CUtils::ANSIToUnicode(serverProgID);
 
 	CLSID clsid;
-	HRESULT result = CLSIDFromProgID(wideName, &clsid);
+	HRESULT result = CLSIDFromProgID((WCHAR*)wideName.c_str(), &clsid);
 	if (FAILED(result))
 	{
 		throw OPCException("Failed to convert progID to class ID", result);
@@ -382,7 +383,6 @@ void CLocalHost::getListOfDAServers(CATID cid, std::vector<std::string>& listOfP
 	CATID Implist[1];
 	Implist[0] = cid;
 	ATL::CComPtr<ICatInformation> iCatInfo;
-
 
 	HRESULT result = CoCreateInstance(CLSID_StdComponentCategoriesMgr, NULL, CLSCTX_INPROC_SERVER, IID_ICatInformation, (void **)&iCatInfo);
 	if (FAILED(result))

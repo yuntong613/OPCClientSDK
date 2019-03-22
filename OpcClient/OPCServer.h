@@ -88,7 +88,7 @@ public:
 
 	void RemoveGroupFromMap(const char* groupName);
 
-	void RemoveAllGroups(COPCGroup* pGroup);
+	void RemoveAllGroups();
 
 	bool WriteOPCValue(const char* groupName, const char* itemName, VARIANT& vtValue);
 	//ÃÌº”∂¡»°œÓ

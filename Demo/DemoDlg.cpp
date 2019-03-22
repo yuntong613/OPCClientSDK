@@ -64,6 +64,8 @@ void CDemoDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_GROUP, m_strGroupName);
 	DDX_Control(pDX, IDC_LIST_PROGID, m_lstProgIDs);
 	DDX_Control(pDX, IDC_LIST2, m_strInfos);
+	DDX_Control(pDX, IDC_LIST_ITEMS, m_lstItems);
+	DDX_Control(pDX, IDC_LIST_ITEMS_VALUE, m_lstValues);
 }
 
 BEGIN_MESSAGE_MAP(CDemoDlg, CDialogEx)
@@ -72,6 +74,12 @@ BEGIN_MESSAGE_MAP(CDemoDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON_GETLIST, &CDemoDlg::OnBnClickedButtonGetlist)
 	ON_WM_DESTROY()
+	ON_BN_CLICKED(IDC_BUTTON_CONNECT, &CDemoDlg::OnBnClickedButtonConnect)
+	ON_BN_CLICKED(IDC_BUTTON_DISCONNECT, &CDemoDlg::OnBnClickedButtonDisconnect)
+	ON_BN_CLICKED(IDC_BUTTON_ADD_GROUP, &CDemoDlg::OnBnClickedButtonAddGroup)
+	ON_BN_CLICKED(IDC_BUTTON_REMOVE_GROUP, &CDemoDlg::OnBnClickedButtonRemoveGroup)
+	ON_BN_CLICKED(IDC_BUTTON_BROWSE, &CDemoDlg::OnBnClickedButtonBrowse)
+	ON_BN_CLICKED(IDC_BUTTON_ADD_ITEMS, &CDemoDlg::OnBnClickedButtonAddItems)
 END_MESSAGE_MAP()
 
 
@@ -107,6 +115,10 @@ BOOL CDemoDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
+
+	m_lstValues.InsertColumn(0, "ItemID", HDF_LEFT, 150);
+	m_lstValues.InsertColumn(1, "Value", HDF_LEFT,150);
+
 	m_pSdk = OpcClientSDK::CreateOPCSDK();
 	if (m_pSdk)
 		m_pSdk->Initialize();
@@ -200,5 +212,161 @@ void CDemoDlg::OnDestroy()
 	{
 		m_pSdk->Uninitialize();
 		OpcClientSDK::DestroyOPCSDK(m_pSdk);
+	}
+}
+
+
+CString GetOpcValue(VARIANT vtValue)
+{
+	CString strValue;
+	switch (vtValue.vt)
+	{
+	case VT_BOOL:
+		strValue.Format("%d", vtValue.boolVal ? 1 : 0);
+		break;
+	case VT_UI1:
+		strValue.Format("%u", vtValue.bVal);
+		break;
+	case VT_I1:
+		strValue.Format("%d", vtValue.cVal);
+		break;
+	case VT_UI2:
+		strValue.Format("%u", vtValue.uiVal);
+		break;
+	case VT_I2:
+		strValue.Format("%d", vtValue.iVal);
+		break;
+	case VT_UI4:
+		strValue.Format("%u", vtValue.ulVal);
+		break;
+	case VT_I4:
+		strValue.Format("%d", vtValue.lVal);
+		break;
+	case VT_R4:
+		strValue.Format("%.2f", vtValue.fltVal);
+		break;
+	case VT_R8:
+		strValue.Format("%.2f", vtValue.dblVal);
+		break;
+	case VT_BSTR:
+		strValue = vtValue.bstrVal;
+		break;
+	default:
+		strValue = "unknowm";
+		break;
+	}
+	return strValue;
+}
+
+void MyOPCValueEventCallBack(char* groupName, char* strNodeName, VARIANT& vValue, int nQuailty, void* pUser)
+{
+	CDemoDlg* pDlg = (CDemoDlg*)pUser;
+	if (pDlg && pDlg->GetSafeHwnd())
+	{
+		CString strText;
+		strText.Format("Group %s, Item %s, Value %s", groupName, strNodeName, GetOpcValue(vValue));
+		pDlg->AddLog(strText);
+		pDlg->UpdateValue(strNodeName, GetOpcValue(vValue));
+	}
+}
+
+void CDemoDlg::AddLog(const char* szText)
+{
+	m_strInfos.AddString(szText);
+}
+
+void CDemoDlg::OnBnClickedButtonConnect()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData();
+	if (m_pSdk)
+	{
+		CString strProgID;
+		m_lstProgIDs.GetText(m_lstProgIDs.GetCurSel(), strProgID);
+		m_pSdk->ConnectServer(m_strRemote, strProgID);
+		m_pSdk->SetValueReport(MyOPCValueEventCallBack, this);
+	}
+}
+
+
+void CDemoDlg::OnBnClickedButtonDisconnect()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData();
+	if (m_pSdk)
+	{
+		CString strProgID;
+		m_lstProgIDs.GetText(m_lstProgIDs.GetCurSel(), strProgID);
+		m_pSdk->DisConnectServer(m_strRemote, strProgID);
+	}
+}
+
+
+void CDemoDlg::OnBnClickedButtonAddGroup()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData();
+	if (m_pSdk)
+	{
+		DWORD dwRate = 0;
+		m_pSdk->AddGroup(m_strGroupName, dwRate);
+	}
+}
+
+
+void CDemoDlg::OnBnClickedButtonRemoveGroup()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData();
+	if (m_pSdk)
+	{
+		m_pSdk->RemoveGroup(m_strGroupName);
+	}
+}
+
+
+void CDemoDlg::OnBnClickedButtonBrowse()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData();
+	if (m_pSdk)
+	{
+		std::vector<std::string> items;
+		m_pSdk->GetItemsList(items);
+		for (int i = 0; i < items.size(); i++)
+		{
+			m_lstItems.AddString(items[i].c_str());
+		}
+	}
+}
+void CDemoDlg::UpdateValue(CString strItemId, CString strValue)
+{
+	LVFINDINFO it;
+	it.psz = (LPCTSTR)strItemId;
+	it.flags = LVFI_STRING;
+	int nIndex = m_lstValues.FindItem(&it);
+	if (nIndex!=-1)
+	{
+		m_lstValues.SetItemText(nIndex, 1, strValue);
+	}else{
+		m_lstValues.InsertItem(0, strItemId);
+	}
+}
+
+void CDemoDlg::OnBnClickedButtonAddItems()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData();
+	if (m_pSdk)
+	{
+		CString strItemID;
+		m_lstItems.GetText(m_lstItems.GetCurSel(), strItemID);
+
+		std::vector<std::string> items;
+		items.push_back((LPCTSTR)strItemID);
+		if (m_pSdk->AddItems(m_strGroupName, items))
+		{
+			UpdateValue(strItemID, "");
+		}
 	}
 }

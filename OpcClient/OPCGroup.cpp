@@ -218,7 +218,7 @@ void COPCGroup::AddItemToMap(COPCItem* pItem)
 	std::lock_guard<std::mutex> itemLock(m_ItemLock);
 
 	std::map<std::string, COPCItem*>::iterator it = m_mapItems.find(pItem->getName());
-	if (it!=m_mapItems.end())
+	if (it != m_mapItems.end())
 	{
 		COPCItem* pItemFind = it->second;
 		if (pItemFind)
@@ -226,7 +226,7 @@ void COPCGroup::AddItemToMap(COPCItem* pItem)
 			delete pItemFind;
 			pItemFind = NULL;
 		}
-	}	
+	}
 	m_mapItems.insert(std::pair<std::string,COPCItem*>(pItem->getName(), pItem));
 }
 
@@ -252,14 +252,16 @@ void COPCGroup::RemoveAllItems()
 	std::lock_guard<std::mutex> itemLock(m_ItemLock);
 
 	std::map<std::string, COPCItem*>::iterator it;
-	for(it = m_mapItems.begin();it!=m_mapItems.end();it++)
+	while (!m_mapItems.empty())
 	{
+		it = m_mapItems.begin();
 		COPCItem* pItemFind = it->second;
 		if (pItemFind)
 		{
 			delete pItemFind;
 			pItemFind = NULL;
 		}
+		m_mapItems.erase(it);
 	}
 	m_mapItems.clear();
 }
