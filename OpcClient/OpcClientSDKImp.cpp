@@ -56,7 +56,7 @@ bool OpcClientSDKImp::Uninitialize()
 	return true;
 }
 
-bool OpcClientSDKImp::GetCLSIDList(const char* svrAddr, std::vector<std::string>& list)
+bool OpcClientSDKImp::GetCLSIDList(const char* svrAddr, std::vector<std::string>& list, OPCException* ex /*= NULL*/)
 {
 	bool bResult = false;
 	COPCHost* pHost = NULL;
@@ -68,7 +68,11 @@ bool OpcClientSDKImp::GetCLSIDList(const char* svrAddr, std::vector<std::string>
 	}
 	catch (OPCException& e)
 	{
-		e.reasonString();
+		if (ex)
+		{
+			ex->reasonString(e.reasonString());
+			ex->reasonCode(e.reasonCode());
+		}
 		bResult = false;
 	}
 
@@ -80,7 +84,7 @@ bool OpcClientSDKImp::GetCLSIDList(const char* svrAddr, std::vector<std::string>
 	return bResult;
 }
 
-bool OpcClientSDKImp::ConnectServer(const char* svrAddr, const char* progid)
+bool OpcClientSDKImp::ConnectServer(const char* svrAddr, const char* progid, OPCException* ex/*=NULL*/)
 {
 	try
 	{
@@ -93,11 +97,16 @@ bool OpcClientSDKImp::ConnectServer(const char* svrAddr, const char* progid)
 	}
 	catch (OPCException& e)
 	{
+		if (ex)
+		{
+			ex->reasonString(e.reasonString());
+			ex->reasonCode(e.reasonCode());
+		}
 	}
 	return false;
 }
 
-bool OpcClientSDKImp::DisConnectServer(const char* svrAddr, const char* progid)
+bool OpcClientSDKImp::DisConnectServer(const char* svrAddr, const char* progid, OPCException* ex/*=NULL*/)
 {
 	try
 	{
@@ -109,12 +118,16 @@ bool OpcClientSDKImp::DisConnectServer(const char* svrAddr, const char* progid)
 	}
 	catch (OPCException& e)
 	{
-		
+		if (ex)
+		{
+			ex->reasonString(e.reasonString());
+			ex->reasonCode(e.reasonCode());
+		}
 	}
 	return false;
 }
 
-bool OpcClientSDKImp::GetServerStatus(ServerStatus& status)
+bool OpcClientSDKImp::GetServerStatus(ServerStatus& status, OPCException* ex /*= NULL*/)
 {
 	try
 	{
@@ -126,11 +139,16 @@ bool OpcClientSDKImp::GetServerStatus(ServerStatus& status)
 	}
 	catch (OPCException& e)
 	{
+		if (ex)
+		{
+			ex->reasonString(e.reasonString());
+			ex->reasonCode(e.reasonCode());
+		}
 	}
 	return false;
 }
 
-bool OpcClientSDKImp::GetItemsList(std::vector<std::string>& lstItems)
+bool OpcClientSDKImp::GetItemsList(std::vector<std::string>& lstItems, OPCException* ex/*= NULL*/)
 {
 	try
 	{
@@ -142,11 +160,16 @@ bool OpcClientSDKImp::GetItemsList(std::vector<std::string>& lstItems)
 	}
 	catch (OPCException& e)
 	{
+		if (ex)
+		{
+			ex->reasonString(e.reasonString());
+			ex->reasonCode(e.reasonCode());
+		}
 	}
 	return false;
 }
 
-bool OpcClientSDKImp::AddGroup(const char* groupName, unsigned long& refreshRate)
+bool OpcClientSDKImp::AddGroup(const char* groupName, unsigned long& refreshRate, OPCException* ex/*= NULL*/)
 {
 	try
 	{
@@ -161,11 +184,16 @@ bool OpcClientSDKImp::AddGroup(const char* groupName, unsigned long& refreshRate
 	}
 	catch (OPCException& e)
 	{
+		if (ex)
+		{
+			ex->reasonString(e.reasonString());
+			ex->reasonCode(e.reasonCode());
+		}
 	}
 	return false;
 }
 
-bool OpcClientSDKImp::RemoveGroup(const char* groupName)
+bool OpcClientSDKImp::RemoveGroup(const char* groupName, OPCException* ex/*= NULL*/)
 {
 	try
 	{
@@ -177,11 +205,16 @@ bool OpcClientSDKImp::RemoveGroup(const char* groupName)
 	}
 	catch (OPCException& e)
 	{
+		if (ex)
+		{
+			ex->reasonString(e.reasonString());
+			ex->reasonCode(e.reasonCode());
+		}
 	}
 	return false;
 }
 
-bool OpcClientSDKImp::AddItems(const char* groupName, std::vector<std::string> lstAdded)
+bool OpcClientSDKImp::AddItems(const char* groupName, std::vector<std::string> lstAdded, OPCException* ex/*= NULL*/)
 {
 	try
 	{
@@ -192,11 +225,16 @@ bool OpcClientSDKImp::AddItems(const char* groupName, std::vector<std::string> l
 	}
 	catch (OPCException& e)
 	{
+		if (ex)
+		{
+			ex->reasonString(e.reasonString());
+			ex->reasonCode(e.reasonCode());
+		}
 	}
 	return false;
 }
 
-bool OpcClientSDKImp::RemoveItems(const char* groupName, std::vector<std::string> lstDel)
+bool OpcClientSDKImp::RemoveItems(const char* groupName, std::vector<std::string> lstDel, OPCException* ex/*= NULL*/)
 {
 	try
 	{
@@ -207,6 +245,11 @@ bool OpcClientSDKImp::RemoveItems(const char* groupName, std::vector<std::string
 	}
 	catch (OPCException& e)
 	{
+		if (ex)
+		{
+			ex->reasonString(e.reasonString());
+			ex->reasonCode(e.reasonCode());
+		}
 	}
 	return false;
 }
@@ -217,13 +260,7 @@ void OpcClientSDKImp::SetValueReport(OPCValueEventCallBack pFun,void* pUser)
 	m_pUser = pUser;
 }
 
-void OpcClientSDKImp::GetLastOPCError(std::string& szText, long& code)
-{
-	szText = g_ErrorText;
-	code = g_ErrorCode;
-}
-
-bool OpcClientSDKImp::WriteOPCValue(const char* groupName, const char* itemName, VARIANT& var)
+bool OpcClientSDKImp::WriteOPCValue(const char* groupName, const char* itemName, VARIANT& var, OPCException* ex/*= NULL*/)
 {
 	try
 	{
@@ -234,6 +271,11 @@ bool OpcClientSDKImp::WriteOPCValue(const char* groupName, const char* itemName,
 	}
 	catch (OPCException& e)
 	{
+		if (ex)
+		{
+			ex->reasonString(e.reasonString());
+			ex->reasonCode(e.reasonCode());
+		}
 	}
 	return false;
 }

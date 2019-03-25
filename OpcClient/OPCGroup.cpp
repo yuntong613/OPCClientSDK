@@ -408,7 +408,7 @@ int COPCGroup::addItems(std::vector<std::string>& itemName, std::vector<COPCItem
 
 	HRESULT	result = getItemManagementInterface()->AddItems(noItems, itemDef, &itemDetails, &itemResult);
 	delete[] itemDef;
-	for (int i = 0; i < itemName.size(); i++) {
+	for (size_t i = 0; i < itemName.size(); i++) {
 		delete tpm[i];
 	}
 	if (FAILED(result)) {

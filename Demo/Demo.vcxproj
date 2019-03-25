@@ -188,6 +188,7 @@
     <ClInclude Include="Demo.h" />
     <ClInclude Include="DemoDlg.h" />
     <ClInclude Include="OpcClientSDK.h" />
+    <ClInclude Include="OPCException.h" />
     <ClInclude Include="opcstructs.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />

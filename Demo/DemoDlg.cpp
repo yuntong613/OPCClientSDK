@@ -186,7 +186,7 @@ void CDemoDlg::OnBnClickedButtonGetlist()
 		std::vector<std::string> lst;
 		if (m_pSdk->GetCLSIDList((LPCTSTR)m_strRemote, lst))
 		{
-			for (int i = 0; i < lst.size(); i++)
+			for (size_t i = 0; i < lst.size(); i++)
 			{
 				m_lstProgIDs.AddString(lst[i].c_str());
 			}
@@ -194,7 +194,6 @@ void CDemoDlg::OnBnClickedButtonGetlist()
 		else {
 			std::string error;
 			HRESULT result;
-			m_pSdk->GetLastOPCError(error, result);
 			CString strText;
 			int nIdex = m_strInfos.AddString(error.c_str());
 			m_strInfos.SetCaretIndex(nIdex);
@@ -275,15 +274,45 @@ void CDemoDlg::AddLog(const char* szText)
 	m_strInfos.AddString(szText);
 }
 
+std::string ErrorMessage(HRESULT hr)
+{
+	void* pMsgBuf = NULL;
+
+	::FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+		NULL,
+		hr,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+		(LPTSTR)&pMsgBuf,
+		0,
+		NULL);
+
+
+	char buff[2048] = { 0 };
+	sprintf_s(buff, "ErrorCode %08x,Cause %s", hr, (LPTSTR)pMsgBuf);
+	// Free the buffer.
+	LocalFree(pMsgBuf);
+
+	std::string eText = buff;
+	return eText;
+}
+
 void CDemoDlg::OnBnClickedButtonConnect()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	UpdateData();
 	if (m_pSdk)
 	{
+		OPCException ex;
 		CString strProgID;
 		m_lstProgIDs.GetText(m_lstProgIDs.GetCurSel(), strProgID);
-		m_pSdk->ConnectServer(m_strRemote, strProgID);
+		if (!m_pSdk->ConnectServer(m_strRemote, strProgID,&ex))
+		{
+			std::string errortext;
+			HRESULT code = 0;
+	
+			AddLog(ex.ErrorMessage().c_str());
+		}
 		m_pSdk->SetValueReport(MyOPCValueEventCallBack, this);
 	}
 }
@@ -333,7 +362,7 @@ void CDemoDlg::OnBnClickedButtonBrowse()
 	{
 		std::vector<std::string> items;
 		m_pSdk->GetItemsList(items);
-		for (int i = 0; i < items.size(); i++)
+		for (size_t i = 0; i < items.size(); i++)
 		{
 			m_lstItems.AddString(items[i].c_str());
 		}

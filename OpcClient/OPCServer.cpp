@@ -116,7 +116,7 @@ bool COPCServer::AddItems(const char* groupName, std::vector<std::string> lstAdd
 			std::vector<COPCItem*> items;
 			std::vector<HRESULT> errors;
 			int nErrorCount = pGroup->addItems(lstAdded, items, errors, true);
-			for (int i = 0; i < items.size(); i++)
+			for (size_t i = 0; i < items.size(); i++)
 			{
 				COPCItem* pItem = items[i];
 				if (pItem)
@@ -141,7 +141,7 @@ bool COPCServer::RemoveItems(const char* groupName, std::vector<std::string> lst
 		COPCGroup* pGroup = it->second;
 		if (pGroup)
 		{
-			for (int i=0;i<lstDel.size();i++)
+			for (size_t i=0;i<lstDel.size();i++)
 			{
 				std::string itemName = lstDel[i];
 				pGroup->RemoveItemFromMap(itemName.c_str());

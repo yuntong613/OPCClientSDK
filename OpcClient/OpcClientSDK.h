@@ -1,5 +1,6 @@
 #pragma once
 
+#include "OPCException.h"
 #include "opcstructs.h"
 #include <vector>
 
@@ -11,30 +12,27 @@ public:
 	//卸载环境
 	virtual bool Uninitialize() = 0;	
 	//获取主机中OPC2.0服务列表
-	virtual bool GetCLSIDList(const char* svrAddr, std::vector<std::string>& list) = 0;
+	virtual bool GetCLSIDList(const char* svrAddr, std::vector<std::string>& list, OPCException* ex = NULL) = 0;
 	//连接OPC服务
-	virtual bool ConnectServer(const char* svrAddr, const char* progid) = 0;
+	virtual bool ConnectServer(const char* svrAddr, const char* progid, OPCException* ex=NULL) = 0;
 	//断开OPC服务
-	virtual bool DisConnectServer(const char* svrAddr, const char* progid) = 0;
+	virtual bool DisConnectServer(const char* svrAddr, const char* progid, OPCException* ex=NULL) = 0;
 	//获取服务状态
-	virtual bool GetServerStatus(ServerStatus& status) = 0;
+	virtual bool GetServerStatus(ServerStatus& status, OPCException* ex = NULL) = 0;
 	//获取点表
-	virtual bool GetItemsList(std::vector<std::string>& lstItems) = 0;
+	virtual bool GetItemsList(std::vector<std::string>& lstItems, OPCException* ex= NULL) = 0;
 	//添加组
-	virtual bool AddGroup(const char* groupName, unsigned long& refreshRate) = 0;
+	virtual bool AddGroup(const char* groupName, unsigned long& refreshRate, OPCException* ex= NULL) = 0;
 	//删除组
-	virtual bool RemoveGroup(const char* groupName) = 0;
+	virtual bool RemoveGroup(const char* groupName, OPCException* ex= NULL) = 0;
 	//添加读取项
-	virtual bool AddItems(const char* groupName, std::vector<std::string> lstAdded) = 0;
+	virtual bool AddItems(const char* groupName, std::vector<std::string> lstAdded, OPCException* ex= NULL) = 0;
 	//删除读取项
-	virtual bool RemoveItems(const char* groupName, std::vector<std::string> lstDel) = 0;
+	virtual bool RemoveItems(const char* groupName, std::vector<std::string> lstDel, OPCException* ex= NULL) = 0;
 	//写OPC值异步
-	virtual bool WriteOPCValue(const char* groupName, const char* itemName, VARIANT& var) = 0;
+	virtual bool WriteOPCValue(const char* groupName, const char* itemName, VARIANT& var, OPCException* ex = NULL) = 0;
 	//值回调
 	virtual void SetValueReport(OPCValueEventCallBack pFun, void* pUser) = 0;
-	//获取错误信息
-	virtual void GetLastOPCError(std::string& szText,long& code) = 0;
-
 public:
 	static OpcClientSDK* CreateOPCSDK();
 	static void DestroyOPCSDK(OpcClientSDK* pSdk);

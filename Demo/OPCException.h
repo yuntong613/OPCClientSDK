@@ -10,7 +10,7 @@ public:
 		rcode = code;
 	}
 
-	~OPCException(){}
+	~OPCException() {}
 
 	std::string reasonString() { return why; }
 
@@ -24,7 +24,7 @@ public:
 	{
 		void* pMsgBuf = NULL;
 
-		::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, 
+		::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL,
 			rcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&pMsgBuf, 0, NULL);
 		char buff[2048] = { 0 };
 		sprintf_s(buff, "%s, ErrorCode %08x, Cause %s", why.c_str(), rcode, (LPTSTR)pMsgBuf);

@@ -178,7 +178,6 @@
     <ClCompile Include="opccomn_i.cpp" />
     <ClCompile Include="opcda_i.cpp" />
     <ClCompile Include="OpcEnum_i.cpp" />
-    <ClCompile Include="OPCException.cpp" />
     <ClCompile Include="OPCGroup.cpp" />
     <ClCompile Include="OPCHost.cpp" />
     <ClCompile Include="OPCItem.cpp" />

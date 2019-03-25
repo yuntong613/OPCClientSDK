@@ -89,9 +89,6 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="OPCException.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="OPCItemData.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
