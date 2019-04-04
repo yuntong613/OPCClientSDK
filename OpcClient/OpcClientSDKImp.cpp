@@ -45,7 +45,7 @@ bool OpcClientSDKImp::Initialize(OPCOLEInitMode mode /*= APARTMENTTHREADED*/)
 		throw OPCException("CoInitialize failed", result);
 	}
 
-	CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_NONE, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL);
+	CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_CONNECT, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL);
 
 	return true;
 }
@@ -173,6 +173,7 @@ bool OpcClientSDKImp::GetItemsList(std::vector<std::string>& lstItems, OPCExcept
 
 bool OpcClientSDKImp::AddGroup(const char* groupName, unsigned long& refreshRate, OPCException* ex/*= NULL*/)
 {
+	COPCGroup *group = NULL;
 	try
 	{
 		if (m_pServer)
@@ -182,10 +183,12 @@ bool OpcClientSDKImp::AddGroup(const char* groupName, unsigned long& refreshRate
 			{
 				return false;
 			}
-			COPCGroup *group = m_pServer->makeGroup(groupName, true, 1000, refreshRate, 0.0);
-			m_pServer->AddGroupToMap(group);
+			group = m_pServer->makeGroup(groupName, true, 1000, refreshRate, 0.0);
+			
 			MyDataCallBack* pCallBack = new MyDataCallBack(m_ValueReport, m_pUser);
 			group->enableAsynch(*pCallBack);
+
+			m_pServer->AddGroupToMap(group);
 			return true;
 		}
 	}
@@ -196,7 +199,13 @@ bool OpcClientSDKImp::AddGroup(const char* groupName, unsigned long& refreshRate
 			ex->reasonString(e.reasonString());
 			ex->reasonCode(e.reasonCode());
 		}
+		if (group)
+		{
+			delete group;
+			group = NULL;
+		}
 	}
+
 	return false;
 }
 

@@ -88,7 +88,6 @@ void CRemoteHost::makeRemoteObject(const IID requestedClass, const IID requested
 	ZeroMemory(&athn, sizeof(COAUTHINFO));
 	// Set up the NULL security information
 	athn.dwAuthnLevel = RPC_C_AUTHN_LEVEL_CONNECT;
-	//athn.dwAuthnLevel = RPC_C_AUTHN_LEVEL_NONE;
 	athn.dwAuthnSvc = RPC_C_AUTHN_WINNT;
 	athn.dwAuthzSvc = RPC_C_AUTHZ_NONE;
 	athn.dwCapabilities = EOAC_NONE;
@@ -99,7 +98,7 @@ void CRemoteHost::makeRemoteObject(const IID requestedClass, const IID requested
 	COSERVERINFO remoteServerInfo;
 	ZeroMemory(&remoteServerInfo, sizeof(COSERVERINFO));
 	remoteServerInfo.pAuthInfo = &athn;
-
+//	remoteServerInfo.pAuthInfo = NULL;
 	wstring hostName = CUtils::ANSIToUnicode(host);
 	remoteServerInfo.pwszName = (wchar_t*)hostName.c_str();
 	printf("%s\n", host.c_str());
@@ -109,8 +108,7 @@ void CRemoteHost::makeRemoteObject(const IID requestedClass, const IID requested
 	reqInterface.pItf = NULL;
 	reqInterface.hr = S_OK;
 
-	HRESULT result = CoCreateInstanceEx(requestedClass, NULL, CLSCTX_REMOTE_SERVER,
-		&remoteServerInfo, 1, &reqInterface);
+	HRESULT result = CoCreateInstanceEx(requestedClass, NULL, CLSCTX_SERVER, &remoteServerInfo, 1, &reqInterface);
 
 	if (FAILED(result))
 	{

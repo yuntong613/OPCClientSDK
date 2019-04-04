@@ -123,6 +123,9 @@ BOOL CDemoDlg::OnInitDialog()
 	m_pSdk = OpcClientSDK::CreateOPCSDK();
 	if (m_pSdk)
 		m_pSdk->Initialize();
+
+	m_strRemote = "192.168.0.104";
+	UpdateData(FALSE);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -186,7 +189,8 @@ void CDemoDlg::OnBnClickedButtonGetlist()
 	if (m_pSdk)
 	{
 		std::vector<std::string> lst;
-		if (m_pSdk->GetCLSIDList((LPCTSTR)m_strRemote, lst))
+		OPCException ex;
+		if (m_pSdk->GetCLSIDList((LPCTSTR)m_strRemote, lst, &ex))
 		{
 			for (size_t i = 0; i < lst.size(); i++)
 			{
@@ -194,11 +198,7 @@ void CDemoDlg::OnBnClickedButtonGetlist()
 			}
 		}
 		else {
-			std::string error;
-			HRESULT result;
-			CString strText;
-			int nIdex = m_strInfos.AddString(error.c_str());
-			m_strInfos.SetCaretIndex(nIdex);
+			AddLog(ex.ErrorMessage().c_str());
 		}
 
 	}
@@ -277,29 +277,6 @@ void CDemoDlg::AddLog(const char* szText)
 	m_strInfos.AddString(szText);
 }
 
-std::string ErrorMessage(HRESULT hr)
-{
-	void* pMsgBuf = NULL;
-
-	::FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL,
-		hr,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-		(LPTSTR)&pMsgBuf,
-		0,
-		NULL);
-
-
-	char buff[2048] = { 0 };
-	sprintf_s(buff, "ErrorCode %08x,Cause %s", hr, (LPTSTR)pMsgBuf);
-	// Free the buffer.
-	LocalFree(pMsgBuf);
-
-	std::string eText = buff;
-	return eText;
-}
-
 void CDemoDlg::OnBnClickedButtonConnect()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -316,7 +293,10 @@ void CDemoDlg::OnBnClickedButtonConnect()
 	
 			AddLog(ex.ErrorMessage().c_str());
 		}
-		m_pSdk->SetValueReport(MyOPCValueEventCallBack, this);
+		else {
+			AddLog("连接服务成功");
+			m_pSdk->SetValueReport(MyOPCValueEventCallBack, this);
+		}
 	}
 }
 
@@ -340,11 +320,13 @@ void CDemoDlg::OnBnClickedButtonAddGroup()
 	UpdateData();
 	if (m_pSdk)
 	{
+		OPCException ex;
 		DWORD dwRate = 0;
-		bool bresult = m_pSdk->AddGroup(m_strGroupName, dwRate);
-		CString strMsg = "";
-		strMsg.Format("AddGroup %s", bresult ? "成功" : "失败");
-		MessageBox(strMsg, MSG_INFO);
+		bool bresult = m_pSdk->AddGroup(m_strGroupName, dwRate, &ex);
+		if (!bresult)
+			AddLog(ex.ErrorMessage().c_str());
+		else
+			AddLog("添加组成功");
 	}
 }
 
@@ -355,9 +337,14 @@ void CDemoDlg::OnBnClickedButtonRemoveGroup()
 	UpdateData();
 	if (m_pSdk)
 	{
-		if (m_pSdk->RemoveGroup(m_strGroupName))
+		OPCException ex;
+		if (m_pSdk->RemoveGroup(m_strGroupName,&ex))
 		{
 			m_lstValues.DeleteAllItems();
+			AddLog("移除组成功");
+		}
+		else {
+			AddLog(ex.ErrorMessage().c_str());
 		}
 	}
 }
@@ -369,13 +356,16 @@ void CDemoDlg::OnBnClickedButtonBrowse()
 	UpdateData();
 	if (m_pSdk)
 	{
-		while (m_lstItems.GetCount()>0)
-		{
-			m_lstItems.DeleteString(0);
-		}
-		
+		m_lstItems.ResetContent();
+
+		OPCException ex;
 		std::vector<std::string> items;
-		m_pSdk->GetItemsList(items);
+		bool bRet = m_pSdk->GetItemsList(items,&ex);
+		if (!bRet)
+		{
+			AddLog(ex.ErrorMessage().c_str());
+			return;
+		}
 		for (size_t i = 0; i < items.size(); i++)
 		{
 			m_lstItems.AddString(items[i].c_str());
@@ -407,9 +397,13 @@ void CDemoDlg::OnBnClickedButtonAddItems()
 
 		std::vector<std::string> items;
 		items.push_back((LPCTSTR)strItemID);
-		if (m_pSdk->AddItems(m_strGroupName, items))
+		OPCException ex;
+		if (m_pSdk->AddItems(m_strGroupName, items,&ex))
 		{
 			UpdateValue(strItemID, "");
+		}
+		else {
+			AddLog(ex.ErrorMessage().c_str());
 		}
 	}
 }
@@ -441,8 +435,8 @@ void CDemoDlg::OnBnClickedButtonDelItems()
 				items.push_back((LPCTSTR)strItemID);
 			}
 		}
-				
-		if (items.size()>0 && m_pSdk->RemoveItems(m_strGroupName, items))
+		OPCException ex;
+		if (items.size()>0 && m_pSdk->RemoveItems(m_strGroupName, items,&ex))
 		{
 			pos = m_lstValues.GetFirstSelectedItemPosition();
 			while (pos)
@@ -452,6 +446,8 @@ void CDemoDlg::OnBnClickedButtonDelItems()
 
 				pos = m_lstValues.GetFirstSelectedItemPosition();
 			} 
+		}else{
+			AddLog(ex.ErrorMessage().c_str());
 		}
 	}
 }

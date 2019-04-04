@@ -494,12 +494,11 @@ void COPCGroup::setState(DWORD reqUpdateRate_ms, DWORD &returnedUpdateRate_ms, f
 }
 
 void COPCGroup::disableAsynch() {
-	if (asynchDataCallBackHandler == NULL) {
-		throw OPCException("Asynch is not exabled");
+	if (asynchDataCallBackHandler) {
+		iAsynchDataCallbackConnectionPoint->Unadvise(callbackHandle);
+		iAsynchDataCallbackConnectionPoint = NULL;
+		asynchDataCallBackHandler = NULL;// WE DO NOT DELETE callbackHandler, let the COM ref counting take care of that
 	}
-	iAsynchDataCallbackConnectionPoint->Unadvise(callbackHandle);
-	iAsynchDataCallbackConnectionPoint = NULL;
-	asynchDataCallBackHandler = NULL;// WE DO NOT DELETE callbackHandler, let the COM ref counting take care of that
 	if (userAsynchCBHandler)
 	{
 		delete userAsynchCBHandler;
