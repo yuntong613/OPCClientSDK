@@ -84,6 +84,8 @@ public:
 
 	virtual ~COPCServer();
 
+	bool exist_group(const char* pgroup_name);//ÅÐ¶Ï×éÊÇ·ñ´æÔÚ
+
 	void AddGroupToMap(COPCGroup* pGroup);
 
 	void RemoveGroupFromMap(const char* groupName);

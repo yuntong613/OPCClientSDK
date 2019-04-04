@@ -243,7 +243,7 @@ void CRemoteHost::getListOfDAServers(CATID cid, std::vector<std::string>& listOf
 {
 	ATL::CComPtr<IOPCServerList> iCatInfo;
 	
-	makeRemoteObject(CLSID_OpcServerList, IID_IOPCServerList, (void**)&iCatInfo);
+	makeRemoteObject(CLSID_OpcServerList, IID_IOPCServerList, (void**)(&iCatInfo));
 
 	CATID Implist[1];
 	Implist[0] = cid;

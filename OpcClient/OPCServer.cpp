@@ -27,11 +27,13 @@ COPCServer::COPCServer(ATL::CComPtr<IOPCServer> &opcServerInterface, std::string
 	iOpcServer = opcServerInterface;
 	HRESULT res = opcServerInterface->QueryInterface(IID_IOPCBrowseServerAddressSpace, (void**)&iOpcNamespace);
 	if (FAILED(res)) {
+		iOpcNamespace = NULL;
 		throw OPCException("Failed to obtain IID_IOPCBrowseServerAddressSpace interface", res);
 	}
 
 	res = opcServerInterface->QueryInterface(IID_IOPCItemProperties, (void**)&iOpcProperties);
 	if (FAILED(res)) {
+		iOpcProperties = NULL;
 		throw OPCException("Failed to obtain IID_IOPCItemProperties interface", res);
 	}
 }
@@ -43,7 +45,18 @@ COPCServer::~COPCServer()
 	RemoveAllGroups();
 }
 
+bool COPCServer::exist_group(const char* pgroup_name)
+{
+	bool exist = false;
+	std::lock_guard<std::mutex> lk(m_groupLock);
 
+	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(pgroup_name);
+	if (it != m_mapGroups.end())
+	{
+		exist = true;
+	}
+	return exist;
+}
 
 void COPCServer::AddGroupToMap(COPCGroup* pGroup)
 {

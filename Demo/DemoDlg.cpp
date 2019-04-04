@@ -11,7 +11,7 @@
 #define new DEBUG_NEW
 #endif
 
-
+#define		MSG_INFO	"提示"
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 
 class CAboutDlg : public CDialogEx
@@ -51,7 +51,7 @@ END_MESSAGE_MAP()
 
 CDemoDlg::CDemoDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_DEMO_DIALOG, pParent)
-	, m_strRemote(_T(""))
+	, m_strRemote(_T("127.0.0.1"))
 	, m_strGroupName(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -80,6 +80,7 @@ BEGIN_MESSAGE_MAP(CDemoDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_REMOVE_GROUP, &CDemoDlg::OnBnClickedButtonRemoveGroup)
 	ON_BN_CLICKED(IDC_BUTTON_BROWSE, &CDemoDlg::OnBnClickedButtonBrowse)
 	ON_BN_CLICKED(IDC_BUTTON_ADD_ITEMS, &CDemoDlg::OnBnClickedButtonAddItems)
+	ON_BN_CLICKED(IDC_BUTTON_DEL_ITEMS, &CDemoDlg::OnBnClickedButtonDelItems)
 END_MESSAGE_MAP()
 
 
@@ -179,6 +180,7 @@ HCURSOR CDemoDlg::OnQueryDragIcon()
 void CDemoDlg::OnBnClickedButtonGetlist()
 {
 	// TODO: 在此添加控件通知处理程序代码
+	GetDlgItem(IDC_BUTTON_GETLIST)->EnableWindow(FALSE);
 	UpdateData();
 	m_lstProgIDs.ResetContent();
 	if (m_pSdk)
@@ -200,6 +202,7 @@ void CDemoDlg::OnBnClickedButtonGetlist()
 		}
 
 	}
+	GetDlgItem(IDC_BUTTON_GETLIST)->EnableWindow(TRUE);
 }
 
 
@@ -338,7 +341,10 @@ void CDemoDlg::OnBnClickedButtonAddGroup()
 	if (m_pSdk)
 	{
 		DWORD dwRate = 0;
-		m_pSdk->AddGroup(m_strGroupName, dwRate);
+		bool bresult = m_pSdk->AddGroup(m_strGroupName, dwRate);
+		CString strMsg = "";
+		strMsg.Format("AddGroup %s", bresult ? "成功" : "失败");
+		MessageBox(strMsg, MSG_INFO);
 	}
 }
 
@@ -349,7 +355,10 @@ void CDemoDlg::OnBnClickedButtonRemoveGroup()
 	UpdateData();
 	if (m_pSdk)
 	{
-		m_pSdk->RemoveGroup(m_strGroupName);
+		if (m_pSdk->RemoveGroup(m_strGroupName))
+		{
+			m_lstValues.DeleteAllItems();
+		}
 	}
 }
 
@@ -360,6 +369,11 @@ void CDemoDlg::OnBnClickedButtonBrowse()
 	UpdateData();
 	if (m_pSdk)
 	{
+		while (m_lstItems.GetCount()>0)
+		{
+			m_lstItems.DeleteString(0);
+		}
+		
 		std::vector<std::string> items;
 		m_pSdk->GetItemsList(items);
 		for (size_t i = 0; i < items.size(); i++)
@@ -396,6 +410,48 @@ void CDemoDlg::OnBnClickedButtonAddItems()
 		if (m_pSdk->AddItems(m_strGroupName, items))
 		{
 			UpdateValue(strItemID, "");
+		}
+	}
+}
+
+
+void CDemoDlg::OnBnClickedButtonDelItems()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	UpdateData();
+	if (m_pSdk)
+	{
+		POSITION pos = m_lstValues.GetFirstSelectedItemPosition();
+
+		if (pos  == NULL )
+		{
+			MessageBox("请现在删除项", MSG_INFO);
+			return;
+		}
+		std::vector<std::string> items;
+
+		while (pos)   //如果你选择多行
+		{
+			int nIdx = -1;
+			nIdx = m_lstValues.GetNextSelectedItem(pos);
+
+			if (nIdx >= 0 && nIdx < m_lstValues.GetItemCount())
+			{
+				CString strItemID = m_lstValues.GetItemText(nIdx, 1);
+				items.push_back((LPCTSTR)strItemID);
+			}
+		}
+				
+		if (items.size()>0 && m_pSdk->RemoveItems(m_strGroupName, items))
+		{
+			pos = m_lstValues.GetFirstSelectedItemPosition();
+			while (pos)
+			{
+				int nItem = m_lstValues.GetNextSelectedItem(pos);
+				m_lstValues.DeleteItem(nItem);
+
+				pos = m_lstValues.GetFirstSelectedItemPosition();
+			} 
 		}
 	}
 }

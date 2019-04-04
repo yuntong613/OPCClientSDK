@@ -21,6 +21,8 @@
 #define IDC_LIST_ITEMS                  1013
 #define IDC_LIST1                       1014
 #define IDC_LIST_ITEMS_VALUE            1014
+#define IDC_BUTTON_ADD_ITEMS2           1015
+#define IDC_BUTTON_DEL_ITEMS            1015
 
 // Next default values for new objects
 // 

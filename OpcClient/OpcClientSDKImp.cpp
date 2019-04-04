@@ -115,6 +115,8 @@ bool OpcClientSDKImp::DisConnectServer(const char* svrAddr, const char* progid, 
 			delete m_pHost;
 			m_pHost = NULL;
 		}
+		m_pServer = NULL;//COPCHost析构函数中执行delete，此处需置NULL added by fangqing
+
 	}
 	catch (OPCException& e)
 	{
@@ -175,6 +177,11 @@ bool OpcClientSDKImp::AddGroup(const char* groupName, unsigned long& refreshRate
 	{
 		if (m_pServer)
 		{
+			//判断组名是否存在
+			if (m_pServer->exist_group(groupName)|| strlen(groupName)<=0)
+			{
+				return false;
+			}
 			COPCGroup *group = m_pServer->makeGroup(groupName, true, 1000, refreshRate, 0.0);
 			m_pServer->AddGroupToMap(group);
 			MyDataCallBack* pCallBack = new MyDataCallBack(m_ValueReport, m_pUser);

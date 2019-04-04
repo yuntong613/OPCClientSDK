@@ -50,4 +50,5 @@ public:
 	afx_msg void OnBnClickedButtonAddItems();
 	CListBox m_lstItems;
 	CListCtrl m_lstValues;
+	afx_msg void OnBnClickedButtonDelItems();
 };
