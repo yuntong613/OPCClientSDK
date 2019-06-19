@@ -26,7 +26,7 @@ public:
 	//删除组
 	virtual bool RemoveGroup(const char* groupName, OPCException* ex = NULL) = 0;
 	//添加读取项
-	virtual bool AddItems(const char* groupName, std::vector<std::string> lstAdded, OPCException* ex = NULL) = 0;
+	virtual bool AddItems(const char* groupName, std::vector<std::string> lstAdded, std::vector<long>& errors, std::vector<VARTYPE>& dataTypes, OPCException* ex = NULL) = 0;
 	//删除读取项
 	virtual bool RemoveItems(const char* groupName, std::vector<std::string> lstDel, OPCException* ex = NULL) = 0;
 	//写OPC值异步

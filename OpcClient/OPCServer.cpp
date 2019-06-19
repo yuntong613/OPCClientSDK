@@ -21,6 +21,7 @@ Boston, MA  02111-1307, USA.
 #include "OPCServer.h"
 #include "OPCException.h"
 #include "OPCGroup.h"
+#include "OPCItem.h"
 
 COPCServer::COPCServer(ATL::CComPtr<IOPCServer> &opcServerInterface, std::string svrname) :name(svrname)
 {
@@ -117,7 +118,7 @@ bool COPCServer::WriteOPCValue(const char* groupName, const char* itemName, VARI
 	return false;
 }
 
-bool COPCServer::AddItems(const char* groupName, std::vector<std::string> lstAdded)
+bool COPCServer::AddItems(const char* groupName, std::vector<std::string> lstAdded, std::vector<long>& errors, std::vector<VARTYPE>& dataTypes)
 {
 	std::lock_guard<std::mutex> lk(m_groupLock);
 	std::map<std::string, COPCGroup*>::iterator it = m_mapGroups.find(groupName);
@@ -126,14 +127,16 @@ bool COPCServer::AddItems(const char* groupName, std::vector<std::string> lstAdd
 		COPCGroup* pGroup = it->second;
 		if (pGroup)
 		{
+			dataTypes.resize(lstAdded.size());
 			std::vector<COPCItem*> items;
-			std::vector<HRESULT> errors;
 			int nErrorCount = pGroup->addItems(lstAdded, items, errors, true);
 			for (size_t i = 0; i < items.size(); i++)
 			{
+				dataTypes[i] = VT_UNKNOWN;
 				COPCItem* pItem = items[i];
 				if (pItem)
 				{
+					dataTypes[i] = pItem->getDataType();
 					pGroup->AddItemToMap(pItem);
 				}
 			}

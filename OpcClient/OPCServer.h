@@ -94,7 +94,7 @@ public:
 
 	bool WriteOPCValue(const char* groupName, const char* itemName, VARIANT& vtValue);
 	//添加读取项
-	bool AddItems(const char* groupName, std::vector<std::string> lstAdded);
+	bool AddItems(const char* groupName, std::vector<std::string> lstAdded, std::vector<long>& errors, std::vector<VARTYPE>& dataTypes);
 
 	//删除读取项
 	bool RemoveItems(const char* groupName, std::vector<std::string> lstDel);

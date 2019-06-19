@@ -75,6 +75,10 @@ public:
 		return dwAccessRights;
 	}
 
+	VARTYPE getDataType() const {
+		return vtCanonicalDataType;
+	}
+
 	OPCHANDLE getHandle() const{
 		return serversItemHandle;
 	}	

@@ -230,13 +230,13 @@ bool OpcClientSDKImp::RemoveGroup(const char* groupName, OPCException* ex/*= NUL
 	return false;
 }
 
-bool OpcClientSDKImp::AddItems(const char* groupName, std::vector<std::string> lstAdded, OPCException* ex/*= NULL*/)
+bool OpcClientSDKImp::AddItems(const char* groupName, std::vector<std::string> lstAdded, std::vector<long>& errors, std::vector<VARTYPE>& dataTypes, OPCException* ex/*= NULL*/)
 {
 	try
 	{
 		if (m_pServer)
 		{
-			return m_pServer->AddItems(groupName, lstAdded);
+			return m_pServer->AddItems(groupName, lstAdded, errors, dataTypes);
 		}
 	}
 	catch (OPCException& e)

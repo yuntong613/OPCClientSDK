@@ -124,7 +124,7 @@ BOOL CDemoDlg::OnInitDialog()
 	if (m_pSdk)
 		m_pSdk->Initialize();
 
-	m_strRemote = "192.168.0.104";
+	m_strRemote = "192.168.0.110";
 	UpdateData(FALSE);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -398,7 +398,9 @@ void CDemoDlg::OnBnClickedButtonAddItems()
 		std::vector<std::string> items;
 		items.push_back((LPCTSTR)strItemID);
 		OPCException ex;
-		if (m_pSdk->AddItems(m_strGroupName, items,&ex))
+		std::vector<HRESULT> errors;
+		std::vector<VARTYPE> dataTypes;
+		if (m_pSdk->AddItems(m_strGroupName, items, errors ,dataTypes,&ex))
 		{
 			UpdateValue(strItemID, "");
 		}
