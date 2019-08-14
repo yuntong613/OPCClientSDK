@@ -126,7 +126,7 @@ bool OpcClientSDKImp::DisConnectServer(const char* svrAddr, const char* progid, 
 			ex->reasonCode(e.reasonCode());
 		}
 	}
-	return false;
+	return true;
 }
 
 bool OpcClientSDKImp::GetServerStatus(ServerStatus& status, OPCException* ex /*= NULL*/)

@@ -135,7 +135,8 @@ CLSID CRemoteHost::GetCLSIDFromRemoteRegistry(const std::string& hostName, const
 		throw OPCException("EnumClassesOfCategories Failed to get enum for categeories", result);
 	}
 
-	GUID glist, classId;
+	GUID glist = GUID_NULL;
+	GUID classId = GUID_NULL;
 	ULONG actual;
 	while ((result = iEnum->Next(1, &glist, &actual)) == S_OK)
 	{
