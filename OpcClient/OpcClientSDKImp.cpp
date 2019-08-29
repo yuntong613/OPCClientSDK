@@ -33,17 +33,17 @@ bool OpcClientSDKImp::Initialize(OPCOLEInitMode mode /*= APARTMENTTHREADED*/)
 	HRESULT result;
 	if (mode == APARTMENTTHREADED)
 	{
-		result = CoInitialize(nullptr);
+		result = CoInitialize(NULL);
 	}
 	if (mode == MULTITHREADED)
 	{
-		result = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+		result = CoInitializeEx(NULL, COINIT_MULTITHREADED);
 	}
 
-	if (FAILED(result))
-	{
-		throw OPCException("CoInitialize failed", result);
-	}
+// 	if (result != S_OK)
+// 	{
+// 		throw OPCException("CoInitialize failed", result);
+// 	}
 
 	CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_CONNECT, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, NULL);
 

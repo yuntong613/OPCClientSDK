@@ -23,7 +23,7 @@ Boston, MA  02111-1307, USA.
 #include "OPCGroup.h"
 #include "OPCException.h"
 
-COPCItem::COPCItem(std::string &itemName, COPCGroup &g)
+COPCItem::COPCItem(std::string& itemName, COPCGroup& g)
 	:name(itemName), group(g)
 {
 }
@@ -32,7 +32,7 @@ COPCItem::COPCItem(std::string &itemName, COPCGroup &g)
 
 COPCItem::~COPCItem()
 {
-	HRESULT *itemResult = NULL;
+	HRESULT* itemResult = NULL;
 	group.getItemManagementInterface()->RemoveItems(1, &serversItemHandle, &itemResult);
 	CoTaskMemFree(itemResult);
 }
@@ -43,8 +43,8 @@ void COPCItem::setOPCParams(OPCHANDLE handle, VARTYPE type, DWORD dwAccess) {
 	dwAccessRights = dwAccess;
 }
 
-void COPCItem::writeSync(VARIANT &data) {
-	HRESULT * itemWriteErrors;
+void COPCItem::writeSync(VARIANT& data) {
+	HRESULT* itemWriteErrors;
 	HRESULT result = group.getSychIOInterface()->Write(1, &serversItemHandle, &data, &itemWriteErrors);
 	if (FAILED(result))
 	{
@@ -60,15 +60,15 @@ void COPCItem::writeSync(VARIANT &data) {
 	CoTaskMemFree(itemWriteErrors);
 }
 
-void COPCItem::readSync(OPCItemData &data, OPCDATASOURCE source) {
-	std::vector<COPCItem *> items;
+void COPCItem::readSync(OPCItemData& data, OPCDATASOURCE source) {
+	std::vector<COPCItem*> items;
 	items.push_back(this);
 	COPCItem_DataMap opcData;
 	group.readSync(items, opcData, source);
 
 	COPCItem_DataMap::CPair* pos = opcData.Lookup(this);
 	if (pos) {
-		OPCItemData * readData = opcData.GetValueAt(pos);
+		OPCItemData* readData = opcData.GetValueAt(pos);
 		if (readData && !FAILED(readData->error)) {
 			data = *readData;
 			return;
@@ -78,18 +78,20 @@ void COPCItem::readSync(OPCItemData &data, OPCDATASOURCE source) {
 	throw OPCException("Read failed");
 }
 
-CTransaction * COPCItem::readAsynch(ITransactionComplete *transactionCB) {
-	std::vector<COPCItem *> items;
+CTransaction* COPCItem::readAsynch(ITransactionComplete* transactionCB) {
+	std::vector<COPCItem*> items;
 	items.push_back(this);
 	return group.readAsync(items, transactionCB);
 }
 
-CTransaction * COPCItem::writeAsynch(VARIANT &data, ITransactionComplete *transactionCB) {
+CTransaction* COPCItem::writeAsynch(VARIANT& data, bool& bResult, ITransactionComplete* transactionCB /*= NULL*/)
+{
+	bResult = true;
 	DWORD cancelID;
-	HRESULT * individualResults;
-	std::vector<COPCItem *> items;
+	HRESULT* individualResults;
+	std::vector<COPCItem*> items;
 	items.push_back(this);
-	CTransaction * trans = new CTransaction(items, transactionCB);
+	CTransaction* trans = new CTransaction(items, transactionCB);
 
 	HRESULT result = group.getAsych2IOInterface()->Write(1, &serversItemHandle, &data, (DWORD)trans, &cancelID, &individualResults);
 
@@ -102,16 +104,18 @@ CTransaction * COPCItem::writeAsynch(VARIANT &data, ITransactionComplete *transa
 	if (FAILED(individualResults[0])) {
 		trans->setItemError(this, individualResults[0]);
 		trans->setCompleted(); // if all items return error then no callback will occur. p 104
+		bResult = false;
 	}
 	CoTaskMemFree(individualResults);
+
 	return trans;
 }
 
-void COPCItem::getSupportedProperties(std::vector<CPropertyDescription> &desc) {
+void COPCItem::getSupportedProperties(std::vector<CPropertyDescription>& desc) {
 	DWORD noProperties = 0;
-	DWORD *pPropertyIDs;
-	LPWSTR *pDescriptions;
-	VARTYPE *pvtDataTypes;
+	DWORD* pPropertyIDs;
+	LPWSTR* pDescriptions;
+	VARTYPE* pvtDataTypes;
 
 	wstring szItemID = CUtils::ANSIToUnicode(name);
 
@@ -132,11 +136,11 @@ void COPCItem::getSupportedProperties(std::vector<CPropertyDescription> &desc) {
 }
 
 
-void COPCItem::getProperties(const std::vector<CPropertyDescription> &propsToRead, ATL::CAutoPtrArray<SPropertyValue> &propsRead) {
+void COPCItem::getProperties(const std::vector<CPropertyDescription>& propsToRead, ATL::CAutoPtrArray<SPropertyValue>& propsRead) {
 	unsigned noProperties = (DWORD)propsToRead.size();
-	VARIANT *pValues = NULL;
-	HRESULT *pErrors = NULL;
-	DWORD *pPropertyIDs = new DWORD[noProperties];
+	VARIANT* pValues = NULL;
+	HRESULT* pErrors = NULL;
+	DWORD* pPropertyIDs = new DWORD[noProperties];
 	for (unsigned i = 0; i < noProperties; i++) {
 		pPropertyIDs[i] = propsToRead[i].id;
 	}

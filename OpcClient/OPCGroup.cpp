@@ -378,6 +378,7 @@ COPCItem * COPCGroup::addItem(std::string &itemName, bool active)
 
 bool COPCGroup::WriteOPCValue(const char* itemName, VARIANT& vtValue)
 {
+	bool bResult = false;
 	std::lock_guard<std::mutex> itemLock(m_ItemLock);
 
 	std::map<std::string, COPCItem*>::iterator it = m_mapItems.find(itemName);
@@ -386,7 +387,7 @@ bool COPCGroup::WriteOPCValue(const char* itemName, VARIANT& vtValue)
 		COPCItem* pItemFind = it->second;
 		if (pItemFind)
 		{
-			CTransaction* pTrans = pItemFind->writeAsynch(vtValue);
+			CTransaction* pTrans = pItemFind->writeAsynch(vtValue, bResult);
 			if (pTrans)
 			{
 				delete pTrans;
@@ -394,7 +395,7 @@ bool COPCGroup::WriteOPCValue(const char* itemName, VARIANT& vtValue)
 			}
 		}
 	}
-	return false;
+	return bResult;
 }
 
 int COPCGroup::addItems(std::vector<std::string>& itemName, std::vector<COPCItem *>& itemsCreated, std::vector<HRESULT>& errors, bool active) {
