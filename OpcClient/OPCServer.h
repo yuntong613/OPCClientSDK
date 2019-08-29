@@ -120,6 +120,7 @@ public:
 	const std::string & getName() const {
 		return name;
 	}
+
 };
 
 #endif // !defined(AFX_OPCSERVER_H__AD6316C0_37B3_4DEC_8378_EE03CC3AEED8__INCLUDED_)

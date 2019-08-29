@@ -205,6 +205,7 @@ COPCServer* CRemoteHost::connectDAServer(const std::string& serverProgIDOrClsID)
 		throw OPCException("Failed obtain IID_IOPCServer interface from server", result);
 	}
 
+
 	if (m_pServer)
 	{
 		delete m_pServer;

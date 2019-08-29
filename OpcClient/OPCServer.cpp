@@ -26,6 +26,7 @@ Boston, MA  02111-1307, USA.
 COPCServer::COPCServer(ATL::CComPtr<IOPCServer> &opcServerInterface, std::string svrname) :name(svrname)
 {
 	iOpcServer = opcServerInterface;
+
 	HRESULT res = opcServerInterface->QueryInterface(IID_IOPCBrowseServerAddressSpace, (void**)&iOpcNamespace);
 	if (FAILED(res)) {
 		iOpcNamespace = NULL;
@@ -214,9 +215,10 @@ void COPCServer::getItemNames(std::vector<std::string> & opcItemNames) {
 
 void COPCServer::getStatus(ServerStatus &status) {
 	OPCSERVERSTATUS *serverStatus;
+
 	HRESULT result = iOpcServer->GetStatus(&serverStatus);
 	if (FAILED(result)) {
-		throw OPCException("Failed to get status");
+		throw OPCException("Failed to get status", result);
 	}
 
 	status.ftStartTime = serverStatus->ftStartTime;
