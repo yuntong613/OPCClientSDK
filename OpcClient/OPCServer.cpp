@@ -236,3 +236,32 @@ void COPCServer::getStatus(ServerStatus &status) {
 	}
 	CoTaskMemFree(serverStatus);
 }
+
+DWORD COPCServer::GetNewTransID()
+{
+	if (m_dwTransId >= 0xFFFFFFFE)
+		m_dwTransId = 0;
+	m_dwTransId++;
+	return m_dwTransId;
+}
+
+DWORD COPCServer::PushTransaction(CTransaction* pTrans)
+{
+	std::lock_guard<std::mutex> lk(m_transLock);
+	DWORD dwTransId = GetNewTransID();
+	m_mapTransCache[dwTransId] = pTrans;
+	return dwTransId;
+}
+
+CTransaction* COPCServer::PeekTransaction(DWORD dwTransId)
+{
+	CTransaction* pTrans = nullptr;
+	std::lock_guard<std::mutex> lk(m_transLock);
+	std::map<DWORD, CTransaction*>::iterator it = m_mapTransCache.find(dwTransId);
+	if (it != m_mapTransCache.end())
+	{
+		pTrans = it->second;
+		m_mapTransCache.erase(dwTransId);
+	}
+	return pTrans;
+}

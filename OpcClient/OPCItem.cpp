@@ -92,10 +92,12 @@ CTransaction* COPCItem::writeAsynch(VARIANT& data, bool& bResult, ITransactionCo
 	std::vector<COPCItem*> items;
 	items.push_back(this);
 	CTransaction* trans = new CTransaction(items, transactionCB);
+	DWORD dwTransId = group.getServer().PushTransaction(trans);
 
-	HRESULT result = group.getAsych2IOInterface()->Write(1, &serversItemHandle, &data, (DWORD)trans, &cancelID, &individualResults);
+	HRESULT result = group.getAsych2IOInterface()->Write(1, &serversItemHandle, &data, dwTransId, &cancelID, &individualResults);
 
 	if (FAILED(result)) {
+		group.getServer().PeekTransaction(dwTransId);
 		delete trans;
 		throw OPCException("Asynch Write failed", result);
 	}

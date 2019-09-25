@@ -38,6 +38,8 @@ class  COPCItem
 private:
 	OPCHANDLE serversItemHandle;
 
+	OPCHANDLE clientItemHandle;
+
     VARTYPE vtCanonicalDataType;
 
     DWORD dwAccessRights;
@@ -79,9 +81,17 @@ public:
 		return vtCanonicalDataType;
 	}
 
-	OPCHANDLE getHandle() const{
+	OPCHANDLE getServerItemHandle() const{
 		return serversItemHandle;
 	}	
+
+	OPCHANDLE getClientItemHandle() const {
+		return clientItemHandle;
+	}
+
+	void setClientItemHandle(OPCHANDLE handle) {
+		clientItemHandle = handle;
+	}
 
 	const std::string & getName() const{
 		return name;

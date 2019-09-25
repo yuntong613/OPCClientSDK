@@ -33,6 +33,7 @@ class COPCGroup;
 #include <mutex>
 #include <map>
 
+class CTransaction;
 /**
 * Local representation of a local or remote OPC server. Wrapper for the COM interfaces to the server.
 */
@@ -75,7 +76,6 @@ private:
 	std::mutex m_groupLock;
 	std::map<std::string, COPCGroup*> m_mapGroups;
 public:
-
 	/**
 	* Make OPC server.
 	* @param opcServerInterface passed form the OPCHost
@@ -121,6 +121,14 @@ public:
 		return name;
 	}
 
+public:
+	std::mutex m_transLock;
+	DWORD GetNewTransID();
+	DWORD PushTransaction(CTransaction* pTrans);
+	CTransaction* PeekTransaction(DWORD dwTransId);
+	std::map<DWORD, CTransaction*> m_mapTransCache;
+protected:
+	DWORD m_dwTransId;
 };
 
 #endif // !defined(AFX_OPCSERVER_H__AD6316C0_37B3_4DEC_8378_EE03CC3AEED8__INCLUDED_)

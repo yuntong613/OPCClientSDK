@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "OpcClientSDK.h"
+#include "../OpcClient/OpcClientSDK.h"
 
 // CDemoDlg 对话框
 class CDemoDlg : public CDialogEx
